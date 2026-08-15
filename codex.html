@@ -937,7 +937,7 @@ function render(){
   // must not move the page. go()/back() set the offset they want after this returns.
   const y=scroller().scrollTop;
   const r=here();
-  const top={home:'home',decks:'decks',deck:'decks',wishes:'wishes',wish:'wishes',
+  const top={home:'home',decks:'decks',deck:'decks',rec:'decks',wishes:'wishes',wish:'wishes',
              moves:'moves',move:'moves',source:'moves',
              artists:'artists',signing:'artists',arts:'artists',
              add:(findWish(r.id)?'wishes':'decks')}[r.v];
@@ -945,7 +945,7 @@ function render(){
   document.body.classList.toggle('editing',EDIT && (r.v==='deck'||r.v==='wish'));
   if(r.v!=='life') document.body.classList.remove('life');
   ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,add:vAdd,
-    moves:vMoves,move:vMove,source:vSource,life:vLife,
+    moves:vMoves,move:vMove,source:vSource,life:vLife,rec:vRec,
     artists:vArtists,signing:vSigning,arts:vArts}[r.v]||vHome)(r);
   scroller().scrollTop=y;
 }
@@ -1051,6 +1051,7 @@ function vDeck(r){
         <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
           <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
           <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
+          <button class="btn sm" id="recBtn">EDHREC ›</button>
         </div>
       </div>
     </div>
@@ -1355,6 +1356,106 @@ function cardTile(c,deckId,sectName){
     </div></div>`;
 }
 
+
+/* ---------- EDHREC RECOMMENDATIONS ----------
+   json.edhrec.com is the feed their own site runs on, and unlike Archidekt and Moxfield
+   it sends CORS headers, so the page can read it directly — no proxy, no backend.
+
+   Their slugs are the card name lowercased with punctuation dropped and spaces hyphened;
+   existing hyphens survive, which is why "Korvold, Fae-Cursed King" becomes
+   korvold-fae-cursed-king rather than losing the one in Fae-Cursed.
+
+   Only the section you're looking at gets its art loaded. The full payload is ~300 cards
+   across 13 lists, and fetching every image for lists you haven't opened is a lot of
+   Scryfall for nothing. */
+const REC_SETS=new Map();     // slug -> {lists, failed, done}
+const REC_LOADING=new Set();
+let RECTAG='';
+
+function edhrecSlug(name){
+  return (name||'')
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')   // Baǵa -> Baga
+    .toLowerCase()
+    .replace(/\s*\/\/.*$/,'')                          // double-faced: front face only
+    .replace(/[^a-z0-9\s-]/g,'')                       // commas, apostrophes, periods
+    .trim().replace(/\s+/g,'-').replace(/-+/g,'-');
+}
+
+async function loadRec(slug){
+  let rec=REC_SETS.get(slug);
+  if(rec&&rec.done) return rec;
+  if(REC_LOADING.has(slug)) return rec;
+  REC_LOADING.add(slug);
+  rec={lists:[],failed:false,missing:false,done:false};
+  REC_SETS.set(slug,rec);
+  try{
+    const r=await fetch('https://json.edhrec.com/pages/commanders/'+slug+'.json',{signal:sig(12000)});
+    if(r.status===404){ rec.missing=true; }
+    else if(!r.ok){ rec.failed=true; }
+    else{
+      const j=await r.json();
+      const cl=(j.container&&j.container.json_dict&&j.container.json_dict.cardlists)||[];
+      rec.lists=cl.map(s=>({header:s.header, tag:s.tag,
+        cards:(s.cardviews||[]).map(c=>({n:c.name, decks:c.num_decks, of:c.potential_decks, syn:c.synergy}))}));
+    }
+  }catch(e){ rec.failed=true; }
+  finally{ rec.done=true; REC_LOADING.delete(slug); }
+  return rec;
+}
+
+function vRec(r){
+  _repaint=()=>{ if(here().v==='rec') vRec(here()); };
+  const d=findDeck(r.id); if(!d) return back();
+  const slug=edhrecSlug(d.commander);
+  const rec=REC_SETS.get(slug);
+  setBar('Recommended', d.commander, {tools:true, placeholder:'Filter cards…', searchFor:'rec:'+r.id});
+
+  if(!rec){ loadRec(slug).then(()=>{ if(here().v==='rec'&&here().id===r.id) vRec(here()); }); }
+  const lists=rec?rec.lists:[];
+  const tag=RECTAG&&lists.some(l=>l.tag===RECTAG)?RECTAG:(lists[0]||{}).tag;
+  const chipbar=document.getElementById('chips');
+  const want='rec:'+slug+':'+tag;
+  if(chipbar.dataset.for!==want){
+    chipbar.innerHTML=lists.map(l=>`<button class="chip${l.tag===tag?' on':''}" data-rectag="${esc(l.tag)}">${esc(l.header)} ${l.cards.length}</button>`).join('');
+    chipbar.dataset.for=want;
+  }
+
+  const sect=lists.find(l=>l.tag===tag);
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  const inDeck=new Set(listEntries(d).map(e=>key(e.n)));
+  const cards=sect?(q?sect.cards.filter(c=>c.n.toLowerCase().includes(q)):sect.cards):[];
+
+  const body = !rec ? '<div class="empty"><span class="spin"></span>Asking EDHREC…</div>'
+    : rec.missing ? `<div class="empty">EDHREC has no page for <b>${esc(d.commander)}</b>.<br>It may be too new, or not a legal commander.</div>`
+    : rec.failed ? '<div class="empty">Couldn\'t reach EDHREC.<br>Check your connection and go back in.</div>'
+    : !cards.length ? '<div class="empty">Nothing matches that filter.</div>'
+    : `<div class="grid ${MODE}">${cards.map(c=>{
+        const have=inDeck.has(key(c.n));
+        const pct=c.of?Math.round(100*c.decks/c.of):null;
+        const src=MODE==='art'?artOf(CACHE.get(key(c.n))):fullOf(CACHE.get(key(c.n)));
+        return `<button class="card${have?' inlist':''}" data-recadd="${esc(c.n)}">
+          ${have?'<div class="badge combo">In deck</div>':(pct!=null?`<div class="badge cmd">${pct}%</div>`:'')}
+          ${src?`<img loading="lazy" src="${src}" alt="${esc(c.n)}">`
+               :`<div class="miss"><b>${esc(c.n)}</b></div>`}
+          <div class="plate"><div style="min-width:0">
+            <div class="nm">${esc(c.n)}</div>
+            <div class="tg">${c.decks!=null?c.decks.toLocaleString()+' decks':''}</div>
+          </div><div class="pz">${money(priceOf(c.n))}</div></div>
+        </button>`;
+      }).join('')}</div>`;
+
+  document.getElementById('main').innerHTML=`
+    <div class="totalbar">
+      <div><div class="l">EDHREC · ${esc(sect?sect.header:'Loading')}</div>
+           <div class="v" style="font-size:20px">${esc(d.name)}</div></div>
+      <div style="text-align:right"><div class="l">${cards.length} card${cards.length===1?'':'s'}</div>
+      <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
+        <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button></div></div>
+    </div>
+    <div class="note">The percentage is how many ${esc(d.commander.split(',')[0])} decks run the card. Tap one to add it to <b style="color:var(--gold)">${esc(d.name)}</b>.</div>
+    ${body}`;
+  if(cards.length) loadCards(cards.map(c=>c.n));
+}
 
 /* ---------- LIFE COUNTER ----------
    Lives in STATE.game so a mis-swipe that reloads the page doesn't lose a game in
@@ -2229,6 +2330,12 @@ document.addEventListener('click',async e=>{
   // artist heading in Signing -> that illustrator's whole body of work
   const ago=t.closest('[data-artistgo]');
   if(ago) return go({v:'arts',subject:ago.dataset.artistgo,mode:'artist',artist:ago.dataset.artistgo,deck:''});
+  /* --- EDHREC --- */
+  if(t.closest('#recBtn')){ RECTAG=''; return go({v:'rec',id:here().id}); }
+  const rt=t.closest('[data-rectag]');
+  if(rt){ RECTAG=rt.dataset.rectag; return vRec(here()); }
+  const ra=t.closest('[data-recadd]');
+  if(ra) return openPick(ra.dataset.recadd, here().id);
   const ec=t.closest('[data-editcopy]');
   if(ec){
     const lid=ec.dataset.editlist, l=findList(lid);
