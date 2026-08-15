@@ -12,7 +12,9 @@
    Card art (cards.scryfall.io) IS cached, cache-first — those URLs are content-addressed
    and immutable, so they can never go stale, and it makes the grid instant on a phone.
 */
-const SHELL = 'codex-shell-v1';
+/* Bump SHELL whenever an installed copy must not keep yesterday's HTML. activate()
+   deletes every cache that isn't the current pair, so the old shell goes with it. */
+const SHELL = 'codex-shell-v2';
 const ART   = 'codex-art-v1';
 const SHELL_FILES = ['codex.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 

@@ -469,6 +469,10 @@
 /* ==========================================================
    1. DEFAULT DATA
    ========================================================== */
+/* Shown in Settings. When a phone insists a feature isn't there and the server says it
+   is, this is how you tell whether the device is running a stale cached copy. */
+const BUILD='2026.08.15-8';
+
 const T={LAND:'Land',MANA:'Mana',ENGINE:'Engine',COMBO:'Combo',CLONE:'Clone',TUTOR:'Tutor',INT:'Interaction',REC:'Recursion',ADD:'Added'};
 
 const CALGAR_99=[["Amphibian Downpour",T.INT],["An Offer You Can't Refuse",T.INT],["Ancient Den",T.LAND],
@@ -1163,8 +1167,16 @@ function pickPrice(c,foil){
 const canFoil=c=>!c||!c.finishes ? true : c.finishes.some(f=>f!=='nonfoil');
 const canPlain=c=>!c||!c.finishes ? true : c.finishes.includes('nonfoil');
 
-async function openPick(name,listId){
-  PICK={name, listId, qty:1, foil:false, cond:'NM', prints:[], sel:null, loading:true, failed:false};
+/* `entry` set = editing a copy already in the list rather than adding a new one. Same
+   panel either way: "which printing, how many, what finish, what condition" is the same
+   question whether the card is going in or already there. */
+async function openPick(name,listId,entry){
+  const pick=entry?null:null;
+  PICK={name, listId, entry:entry||null,
+        qty:entry?entryQty(entry):1,
+        foil:!!(entry&&entry.foil),
+        cond:(entry&&entry.cond)||'NM',
+        prints:[], sel:(entry&&entry.pid)||null, loading:true, failed:false};
   drawPick();
   try{
     const r=await fetch('https://api.scryfall.com/cards/search?unique=prints&order=released&dir=asc&q='
@@ -1175,10 +1187,13 @@ async function openPick(name,listId){
     EVER_OK=true;
     PICK.prints=j.data||[];
     PICK.prints.forEach(c=>ART_BY_ID.set(c.id,c));
-    // default to the cheapest nonfoil printing — the one you most likely actually own
-    const plain=PICK.prints.filter(c=>canPlain(c)&&pickPrice(c,false)!=null);
-    const best=(plain.length?plain:PICK.prints).slice().sort((a,b)=>(pickPrice(a,false)??1e9)-(pickPrice(b,false)??1e9))[0];
-    PICK.sel=(best||PICK.prints[0]||{}).id||null;
+    // an edited copy keeps the printing it already has; a new one defaults to the
+    // cheapest nonfoil, which is the one you most likely actually own
+    if(!PICK.sel||!PICK.prints.some(c=>c.id===PICK.sel)){
+      const plain=PICK.prints.filter(c=>canPlain(c)&&pickPrice(c,false)!=null);
+      const best=(plain.length?plain:PICK.prints).slice().sort((a,b)=>(pickPrice(a,false)??1e9)-(pickPrice(b,false)??1e9))[0];
+      PICK.sel=(best||PICK.prints[0]||{}).id||null;
+    }
   }catch(e){ if(PICK&&PICK.name===name) PICK.failed=true; }
   if(PICK&&PICK.name===name){ PICK.loading=false; drawPick(); }
 }
@@ -1221,8 +1236,10 @@ function drawPick(){
           <span>${esc(printLabel(c))}</span>
         </button>`).join('')||(PICK.loading?'<div class="note">Loading…</div>':'<div class="note">No paper printings found.</div>')}</div>
 
-      <button class="btn primary wide" id="pickAdd" style="margin-top:16px">
-        Add ${PICK.qty>1?PICK.qty+' copies':'to '+esc(list?list.name:'list')}</button>
+      <button class="btn primary wide" id="pickAdd" style="margin-top:16px">${
+        PICK.entry ? 'Save changes'
+                   : 'Add '+(PICK.qty>1?PICK.qty+' copies':'to '+esc(list?list.name:'list'))}</button>
+      ${PICK.entry?`<button class="btn wide" id="pickRemove" style="margin-top:10px;border-color:rgba(198,58,58,.6);color:#ff8a8a">Remove from ${esc(list?list.name:'list')}</button>`:''}
     </div>`,'card-detail');
 }
 
@@ -1965,12 +1982,19 @@ function artsBar(c,deckId){
 
 /* Sits under the arts buttons on a card sheet. Reads its state from the lists rather than
    from a flag, so it says where the card already is instead of just "Add". */
-function wishBar(c){
+function wishBar(c,deckId){
   if(!c||!c.name) return '';
   const on=wishesWith(c.name);
-  return `<div class="artsbar"><button class="artsbtn" data-wishadd="${esc(c.name)}"
-    ${on.length?'style="border-color:var(--green);color:var(--green)"':''}
-    >${on.length?'✓ On '+esc(on.join(', ')):'＋ Add to wishlist'}</button></div>`;
+  const list=deckId?findList(deckId):null;
+  const entry=list?listEntries(list).find(e=>e.n===c.name):null;
+  return `<div class="artsbar">${
+    /* opened from a list, so the copy in that list can be edited here — printing,
+       quantity, finish, condition — instead of only from the add flow */
+    entry?`<button class="artsbtn" data-editcopy="${esc(c.name)}" data-editlist="${esc(deckId)}"
+      >✎ ${entryQty(entry)>1?entryQty(entry)+' copies':'Your copy'}${entry.foil?' · Foil':''}${entry.cond&&entry.cond!=='NM'?' · '+esc(entry.cond):''}</button>`:''}
+    <button class="artsbtn" data-wishadd="${esc(c.name)}"
+      ${on.length?'style="border-color:var(--green);color:var(--green)"':''}
+      >${on.length?'✓ On '+esc(on.join(', ')):'＋ Add to wishlist'}</button></div>`;
 }
 
 function sheetWishPick(name){
@@ -1994,7 +2018,7 @@ function showCardObj(c,deckId){
   const txt=faces.map(f=>`<b style="color:var(--gold)">${esc(f.name)}${f.mana_cost?' '+esc(f.mana_cost):''}</b>\n${esc(f.type_line||'')}\n\n${esc(f.oracle_text||'')}${f.power?`\n\n${f.power}/${f.toughness}`:''}${f.loyalty?`\n\nLoyalty ${f.loyalty}`:''}`).join('\n\n──────────\n\n');
   const p=c.prices||{};
   const inDecks=decksWith(c.name), onWish=wishesWith(c.name);
-  const artsBtn=artsBar(c,deckId)+wishBar(c);
+  const artsBtn=artsBar(c,deckId)+wishBar(c,deckId);
   openSheet(`<div>${imgs}${artsBtn}</div><div>
       <h3>${esc(c.name)}</h3>
       <div class="tl">${esc(c.set_name||'')} · #${esc(c.collector_number||'')}</div>
@@ -2061,7 +2085,7 @@ async function showCard(name,deckId){
     : faces.map(f=>`<img src="${f.image_uris?.normal||fullOf(c)}" alt="${esc(c.name)}">`).join('');
   const txt=faces.map(f=>`<b style="color:var(--gold)">${esc(f.name)}${f.mana_cost?' '+esc(f.mana_cost):''}</b>\n${esc(f.type_line||'')}\n\n${esc(f.oracle_text||'')}${f.power?`\n\n${f.power}/${f.toughness}`:''}${f.loyalty?`\n\nLoyalty ${f.loyalty}`:''}`).join('\n\n──────────\n\n');
   const p=c.prices||{};
-  const artsBtn=artsBar(c,deckId)+wishBar(c);
+  const artsBtn=artsBar(c,deckId)+wishBar(c,deckId);
   openSheet(`<div>${imgs}${artsBtn}</div><div>
       <h3>${esc(c.name)}</h3><div class="tl">${esc(c.type_line||'')}</div>
       <div class="l mono" style="font-size:10px;letter-spacing:.15em;color:var(--bone-dim);text-transform:uppercase">TCGplayer market</div>
@@ -2124,7 +2148,7 @@ function sheetAddCard(deckId){
 }
 
 function sheetSettings(){
-  openSheet(`<h3>Settings</h3><div class="tl">Data &amp; backup</div>
+  openSheet(`<h3>Settings</h3><div class="tl">Build ${BUILD} · data &amp; backup</div>
     <div class="note" style="margin-top:12px">Your edits save automatically to this device.
       ${STORAGE_OK?'Storage is working.':'<b style="color:#ff8a8a">Storage is blocked here</b> — open the file in Safari for saving to work.'}
       iOS can clear website data for sites you haven\\'t visited in a while, so export a backup now and then. Adding this to your Home Screen makes storage much stickier.</div>
@@ -2205,6 +2229,13 @@ document.addEventListener('click',async e=>{
   // artist heading in Signing -> that illustrator's whole body of work
   const ago=t.closest('[data-artistgo]');
   if(ago) return go({v:'arts',subject:ago.dataset.artistgo,mode:'artist',artist:ago.dataset.artistgo,deck:''});
+  const ec=t.closest('[data-editcopy]');
+  if(ec){
+    const lid=ec.dataset.editlist, l=findList(lid);
+    const entry=l&&listEntries(l).find(x=>x.n===ec.dataset.editcopy);
+    if(entry) return openPick(ec.dataset.editcopy,lid,entry);
+    return;
+  }
   const wadd=t.closest('[data-wishadd]'); if(wadd) return sheetWishPick(wadd.dataset.wishadd);
   /* --- add-card search --- */
   const asect=t.closest('[data-addsect]');
@@ -2228,15 +2259,24 @@ document.addEventListener('click',async e=>{
   if(t.closest('#pickAdd')&&PICK){
     const list=findList(PICK.listId); if(!list) return;
     const r=here();
-    const sect=list.sections.find(s=>s.name===r.sect)||list.sections[0];
-    // a wishlist is a list of wants, not a changelog — the "Added" tag only means
-    // something in a deck, where it marks what wasn't in the original build
-    sect.cards.push({n:PICK.name, tag:findWish(PICK.listId)?'':T.ADD,
-                     qty:PICK.qty, foil:PICK.foil, cond:PICK.cond, pid:PICK.sel||''});
+    if(PICK.entry){
+      Object.assign(PICK.entry,{qty:PICK.qty,foil:PICK.foil,cond:PICK.cond,pid:PICK.sel||''});
+    }else{
+      const sect=list.sections.find(s=>s.name===r.sect)||list.sections[0];
+      // a wishlist is a list of wants, not a changelog — the "Added" tag only means
+      // something in a deck, where it marks what wasn't in the original build
+      sect.cards.push({n:PICK.name, tag:findWish(PICK.listId)?'':T.ADD,
+                       qty:PICK.qty, foil:PICK.foil, cond:PICK.cond, pid:PICK.sel||''});
+    }
     const chosen=PICK.prints.find(c=>c.id===PICK.sel);
     if(chosen) setCardArt(PICK.listId,PICK.name,chosen);   // same store the art picker writes
     save(); PICK=null; closeSheet();
     return here().v==='add'?vAdd(here()):render();
+  }
+  if(t.closest('#pickRemove')&&PICK&&PICK.entry){
+    const list=findList(PICK.listId);
+    if(list) list.sections.forEach(s=>{ const i=s.cards.indexOf(PICK.entry); if(i>-1) s.cards.splice(i,1); });
+    save(); PICK=null; closeSheet(); return render();
   }
   if(t.closest('#addByName')) return sheetAddCard(here().id);
   const wput=t.closest('[data-wishput]');
