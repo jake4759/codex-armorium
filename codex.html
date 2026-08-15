@@ -1287,16 +1287,23 @@ const ART_BY_ID=new Map();        // scryfall id -> card object
 const ART_LOADING=new Set();
 
 /* Two modes, one loader.
-   card   — every illustration of the card you tapped. What you want from a deck:
-            Adarkar Wastes has been painted several times, and you're choosing
-            which version to chase.
+   card   — illustrations of the card you tapped.
    artist — everything that illustrator has painted. What you want from Signing,
             which is organised by artist because that's how a con queue works.
+
+   Card mode narrows to one artist when it is given one, and it only gets one when the
+   sheet was opened from Signing. There you are stood in Rob Alexander's queue holding
+   Adarkar Wastes: the four other painters of that card are noise, because he cannot sign
+   them. From a deck the same button is the tile-art picker, so it is left unfiltered —
+   narrowing it would make most of the printings unpickable.
+
    `!"..."` is Scryfall's exact-name match, so "Bolt" can't drag in "Lightning Bolt". */
-function artSpec(mode,subject){
-  return mode==='artist'
-    ? {key:'artist:'+subject, q:'a:"'+subject+'" game:paper', cap:6, order:'released&dir=desc'}
-    : {key:'card:'+subject,   q:'!"'+subject+'" game:paper',  cap:3, order:'released&dir=asc'};
+function artSpec(mode,subject,artist){
+  if(mode==='artist')
+    return {key:'artist:'+subject, q:'a:"'+subject+'" game:paper', cap:6, order:'released&dir=desc'};
+  const by = artist ? ' a:"'+artist+'"' : '';
+  return {key:'card:'+subject+(artist?'|'+artist:''),        // filtered and unfiltered cache separately
+          q:'!"'+subject+'"'+by+' game:paper', cap:3, order:'released&dir=asc'};
 }
 
 async function loadArts(spec,onPage){
@@ -1374,9 +1381,13 @@ function vArts(r){
   const subject=r.subject;
   const deckId=r.deck||'';                // which deck's tiles a pick here applies to
   const deck=deckId?findList(deckId):null;   // a wishlist gets its own picks too
-  const spec=artSpec(mode,subject);
+  // set only when the sheet came from Signing — see artSpec()
+  const byArtist=mode==='card'?(r.artist||''):'';
+  const spec=artSpec(mode,subject,byArtist);
   const rec=ART_SETS.get(spec.key);
-  setBar(subject, mode==='artist'?'Every artwork':'Every artwork of this card', {tools:true});
+  setBar(subject, mode==='artist' ? 'Every artwork'
+                 : byArtist ? 'This card, by '+byArtist
+                 : 'Every artwork of this card', {tools:true});
   const q=document.getElementById('search').value.toLowerCase().trim();
   // allOwnedNames() returns an array; a Set keeps the per-tile check O(1) across
   // the several hundred tiles a prolific artist produces.
@@ -1385,10 +1396,11 @@ function vArts(r){
               ||(c.artist||'').toLowerCase().includes(q)
               ||(c.set_name||'').toLowerCase().includes(q);
   const list=rec?(q?rec.cards.filter(match):rec.cards):[];
-  const tiles=cs=>cs.map(c=>artTile(c,mode,r.artist,owned,deckId)).join('');
+  // when the whole grid is already one artist, "Same artist" on every tile says nothing
+  const tiles=cs=>cs.map(c=>artTile(c,mode,byArtist?'':r.artist,owned,deckId)).join('');
   document.getElementById('main').innerHTML=`
     <div class="totalbar">
-      <div><div class="l">${mode==='artist'?'Illustrated by':'Every artwork of'}</div>
+      <div><div class="l">${mode==='artist'?'Illustrated by':byArtist?esc(byArtist)+'’s printings of':'Every artwork of'}</div>
            <div class="v" style="font-size:22px">${esc(subject)}</div></div>
       <div style="text-align:right"><div class="l" id="artcount">${esc(artStatus(rec))}</div></div>
     </div>
@@ -1398,11 +1410,14 @@ function vArts(r){
        artPick(subject,deckId)?` <button class="btn sm" id="artReset" style="margin-left:6px">Use default again</button>`:''}</div>`:''}
     <div class="grid art" id="artgrid">${tiles(list)}</div>
     ${!rec||(!rec.done&&!rec.cards.length)?'<div class="empty"><span class="spin"></span>Summoning every artwork…</div>':''}
-    ${rec&&rec.done&&!rec.cards.length?`<div class="empty">Nothing found for ${esc(subject)}.${mode==='artist'?'<br>Scryfall may credit them under a different name.':''}</div>`:''}
+    ${rec&&rec.done&&!rec.cards.length?`<div class="empty">Nothing found for ${esc(subject)}.${
+       mode==='artist'?'<br>Scryfall may credit them under a different name.'
+       :byArtist?`<br>Scryfall lists no printing of it illustrated by ${esc(byArtist)}.`:''}</div>`:''}
     ${rec&&rec.done&&rec.cards.length&&!list.length?'<div class="empty">Nothing matches that filter.</div>':''}`;
 
   if(!rec||!rec.done){
-    const still=()=>{ const h=here(); return h.v==='arts'&&h.subject===subject&&(h.mode==='artist'?'artist':'card')===mode&&(h.deck||'')===deckId; };
+    const still=()=>{ const h=here(); return h.v==='arts'&&h.subject===subject&&(h.mode==='artist'?'artist':'card')===mode
+                                          &&(h.deck||'')===deckId&&(h.mode==='artist'?'':(h.artist||''))===byArtist; };
     loadArts(spec,(fresh)=>{
       if(!still()) return;
       const grid=document.getElementById('artgrid');
@@ -1419,20 +1434,25 @@ function vArts(r){
 
 /* The bar under the card image. Two different questions, so two buttons rather than one
    that changes meaning with context:
-     Arts of this card  — every artwork of this exact card, and the picker that sets the
-                          deck tile. Versions by the artist you arrived from get badged.
      Arts by <surname>  — everything that illustrator has painted. Only offered from
                           Signing, which is organised by artist because that's how a con
-                          queue works; anywhere else it's a detour from the card at hand. */
+                          queue works; anywhere else it's a detour from the card at hand.
+     Arts of this card  — printings of this exact card.
+
+   The artist rides along on the card button *only* from Signing, and that attribute is
+   what makes artSpec() narrow the results (see there). From a deck the same button is the
+   tile-art picker, so it must keep offering every printing. */
 function artsBar(c,deckId){
   if(!c||!c.name) return '';
-  const deck=`data-arts-deck="${esc(deckId||'')}" data-arts-artist="${esc(c.artist||'')}"`;
-  const byArtist = (here().v==='signing' && c.artist)
-    ? `<button class="artsbtn" data-arts="${esc(c.artist)}" data-arts-mode="artist" ${deck}
-        >◈ Arts by ${esc(c.artist.split(' ').slice(-1)[0])}</button>`
+  const fromSigning=here().v==='signing';
+  const deckAttr=`data-arts-deck="${esc(deckId||'')}"`;
+  const byArtist = (fromSigning && c.artist)
+    ? `<button class="artsbtn" data-arts="${esc(c.artist)}" data-arts-mode="artist" ${deckAttr}
+        data-arts-artist="${esc(c.artist)}">◈ Arts by ${esc(c.artist.split(' ').slice(-1)[0])}</button>`
     : '';
-  const ofCard = `<button class="artsbtn" data-arts="${esc(c.name)}" data-arts-mode="card" ${deck}
-        >◈ Arts of this card</button>`;
+  const ofCard = `<button class="artsbtn" data-arts="${esc(c.name)}" data-arts-mode="card" ${deckAttr}
+        data-arts-artist="${fromSigning&&c.artist?esc(c.artist):''}"
+        >◈ ${fromSigning&&c.artist?'Arts of this card by '+esc(c.artist.split(' ').slice(-1)[0]):'Arts of this card'}</button>`;
   return `<div class="artsbar">${byArtist}${ofCard}</div>`;
 }
 
