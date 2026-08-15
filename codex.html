@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="theme-color" content="#0f0b0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hoard">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAHTklEQVR42u2dPW7kOBBGZUHBJJP5BnuMgWHnm066mc+w8BGMPYOzSTfd3Iaxx9gb+BAbNCAIaolNkVXFKup9kYN2N/nxqVj8EXn37fv9gNCWRixAwIGAAwEHAg4EHAg4EHAg4EDAgYADIeBAwIGAAwEHAg4EHCiGpnNW+/3t4ei/PD1/ns2luzNsEyxAAVx6hkMJiFOB0hUcxkB0D0oPcDhhoj9KYsPhFos+EIkKRwgsoiMSDw4RLJ6ePzO/Z25Uqd8FDndYrFrl0FdttqhgYdxq6hgL1TZYfvnR4l0+7x+RqTMsmjheBop/RCaw0AClD0Sm6GT4tPVoGvv+9uCwIh4T0qPjCM+/Yv9b3UaOoCZK9TXeuhhHkSOHDFnjbv6iRjvZVzM8HPbtdP/4MgzD33/8u/eBn79+zH9/fbxGr29IOMyepAsNm1ohssRiUyKs+A8hjeHQfoASQEipEhTPIaQlHHq+GDAhSIlbPprBoeRIPhaH2lLpa53z0QaOtBcFRuQ0nmBSqfFzDvloAIfsZEa6ncRHGRoFcDsdbA1H/Vp5ZsMYYCFSEs9LSKZwCL4tstcYxkxUFszhVoQ2cEgZ4RaLgkIW7xiy4cP765Ar+zZN//p4dUVGokjL8vvfBjt6Dhs3H0eHWNwsnsgcjA1YFt1KZU2enj/3AsYQRJvlTyzrOOlc1OGoZ/x6pSMQFglE6uHQ5iPeEQxByYhYcl049sJGPu+rsBGXjOvy31z7Xdq155hq8jHakyGb/0fkQ7YienyM9mRcHoKc4DE/W31gcR1CcoLHbFTCMSU+rHOOZQ3TfHRMRj4fK4t6WFs5mmqsPq+6P8/tEGY1eCmIE+LouNh9PtdqNdjrnoxLHS+1dhgpx+ZhY28a4AxkbNb05hSq2chlNI4N3U9m2EyBhFx4K4a3ya5P/4lI22GtReSgQ7HsXJzCUYYtZBTzoR08xuZhAzKKHdAOHqOrsIFE/JEKHrqRg7AROnjIzJCWzW0sHwuld4GaS+SlvbL96/XcTK18kepQfv/zP7dk/PPXb1KdS4KP/GMzG3Qr9SWjQ9HwpL5d2uwEIw8N4ZgWHPkdHmGj3hmltLQWjnBnkJ9Kla2jEjm0BynnDB7pnkUjeHABIHIDB6loIPeq4Kjs0uhTDFyqaSP5yHHCKzadSNx5026FVFQ7LSUhRe7hYIYjiopbSjhykHD0lHbYdSskHOHSDnIOBBwIOFB7ODYTYLJRtzlp2YBFeJvgqhCbb0iTjRbnpLONy42De57Xa9IjY4hzu25QbcaDSC81DUyXhXXVKCEVOVYRGfvJaAU5gIPgEc5JIgcCDgQcCDhQX3DkH/WNnDhJ5ECt4SBsRPTTxWmCyKero2pxExeFIBHDNz2X+v7JBue95WaUr71tD3qP3ygIAauvHiS4D4vRCgIOBBwoJByt3gbuOxuNBAc5qcNstAEcTGBEUXFLkXMgH3CQdgRKOAbLCwBRrISjFo7KtIPgYeBSTRtZ5xysqgRyj4QU2cKR7vxISzVSUY1UrxYOZjs8q7J1tLqVfJAJHvXO+L2pibS0V8cEdoLV3zFWszdM6h61zkawg/MLAN/fHhLlW24cJOOpCRt6s44y3UpZIzFsqR+kqD42ujnHIajho8AH1cUKMTjqgweS8keqt1UfrRA8goaNQfulpoKH48x8rOreNmwMTk4ThI8CMuKdJliMLcmHiBshr9Q4ivnZgsfR+trsqLr79v3eDIU9rlefn88XOEk4uZCxOiMwEQOO2lusqa0vm/W82PTz148zvHJ9//iyeXSkh5PBTa8rX6GQjo0Xy/ruX/bISFhkFjYG+1XZuW45vWbffNwk49oo483bWnAUdJmnyk8LapTwTan3UUlIZUlfnn/VQQoyY3HolOrEvgh3h7c0GXZ3EEKKy29PxhBx93lcPsKVXB2OerSvu5L7x5dYRisVWHugG+Ooya+P101EggaMzep4I0M9Ia1PTlcWbALhNku9WdrihN1mcixYzrHJgcNeZq9IsUZbdpGj4EFJPB97NDR3/2jBCoKH2Zy6KRyHvMixIBEwjCmpKckhPixXW6zhyPHiUP3THYoBIlIFyEHEeB2uARw3jSiwICfnEARF6efEbQkJh3j8KBjfHmo8pa/VdiMqHKqONBm8FEcmn2Q0hsPAFwNKKnsrt2S0h8MyEUuDslojTV+FJJK+OMxA3cHR6gHKWTrX283qOWC4g6PVk2TfSP4Dhkc4huzpICnv+v65ek2DJ118uWmih53ZfWPhMXIcdbPGUJtJa4OKnCVyLJ3KtHX+mCtzBZcYgaO8i/HW1/SBhXc4ahAx9l1kHxNwGCFiAErNWxdRUmmnCalSq5TRVoZmaCyiwiGIiH3wi6WocARCJO5hqbHhcI5I9DN0e4DDGyXdnKvcFRwNQenyoO1u4TAApfuT108BhwguJ7x26KRwoBxxASACDgQcCDgQcCDgQMCBgAMBBwIOBBwIAQcCDgQcCDgQcCBf+h8qQwTeGInWwAAAAABJRU5ErkJggg==">
+<title>Korvold's Hoard</title>
+<style>
+  :root{
+    /* Jund on parchment — Korvold's treasure gold, rot-red and swamp-green,
+       laid over warm bone instead of black. Variable NAMES are unchanged from the
+       dark build on purpose: every rule below still resolves, so the palette can be
+       re-pointed in one place without touching component CSS. */
+    --bg:#0f0b0a; --surface:#1a1311; --surface2:#241a17; --surface3:#2f2320;
+    --gold:#e3b765; --gold-dim:#8d7134; --gold-glow:rgba(227,183,101,.13);
+    --gold-soft:#3a2c17;
+    --red:#c4453a; --red-soft:#3c1a16;
+    --green:#6ea355; --green-soft:#1f2d19;
+    --ember:#e0742f;
+    --text:#f4ece0; --muted:#a3948a;
+    --line:rgba(227,183,101,.11);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.40), 0 4px 14px rgba(0,0,0,.28);
+    --shadow-md:0 6px 18px rgba(0,0,0,.45), 0 18px 44px rgba(0,0,0,.36);
+    --bar:60px; --tab:78px;
+    --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+    --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
+    --r:26px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background-image:
+      radial-gradient(900px 420px at 88% -8%, rgba(163,51,42,.10), transparent 62%),
+      radial-gradient(760px 400px at 2% 6%, rgba(70,115,58,.10), transparent 62%),
+      radial-gradient(680px 380px at 50% 104%, rgba(168,118,31,.09), transparent 66%);
+    background-attachment:fixed; min-height:100dvh;
+    overscroll-behavior-y:none; -webkit-font-smoothing:antialiased;
+    padding-bottom:calc(var(--tab) + var(--sab) + 18px);
+  }
+  ::selection{background:var(--gold);color:#fff}
+  button,input,select{font:inherit;color:inherit}
+  button{background:none;border:none;cursor:pointer;touch-action:manipulation}
+
+  /* ---------- top bar ---------- */
+  .hazard{height:3px;background:linear-gradient(90deg,var(--green),var(--gold),var(--red))}
+  .appbar{
+    position:sticky;top:0;z-index:60;
+    padding:calc(var(--sat) + 8px) calc(16px + var(--sar)) 0 calc(16px + var(--sal));
+    background:rgba(15,11,10,.82);
+    -webkit-backdrop-filter:saturate(150%) blur(18px); backdrop-filter:saturate(150%) blur(18px);
+  }
+  .row{display:flex;align-items:center;gap:12px;min-height:var(--bar)}
+  .icobtn{
+    width:44px;height:44px;flex:0 0 44px;border:none;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;color:var(--text);font-size:19px;
+    background:var(--surface);box-shadow:var(--shadow-sm);
+  }
+  .icobtn:active{background:var(--gold);color:#1a1311;transform:scale(.94)}
+  .icobtn[hidden]{display:none}
+  .barttl{flex:1;min-width:0}
+  .barttl h1{
+    font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:22px;letter-spacing:.01em;
+    color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;
+  }
+  .barttl .sub{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{display:none;padding:6px 0 12px}
+  body.tools .toolbar{display:block}
+  .search{
+    width:100%;height:50px;background:var(--surface);border:none;box-shadow:var(--shadow-sm);
+    border-radius:25px;color:var(--text);padding:0 20px;font-size:16px;
+  }
+  .search:focus{outline:2px solid var(--gold);outline-offset:0}
+  .search::placeholder{color:var(--muted)}
+  .chips{display:flex;gap:8px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{
+    flex:0 0 auto;min-height:40px;padding:0 18px;border:none;border-radius:20px;
+    background:var(--surface);box-shadow:var(--shadow-sm);
+    font-size:13px;color:var(--muted);display:flex;align-items:center;white-space:nowrap;font-weight:500;
+  }
+  .chip.on{background:var(--gold);color:#1a1311;font-weight:600}
+
+  /* ---------- layout ---------- */
+  main{padding:6px calc(16px + var(--sar)) 24px calc(16px + var(--sal));max-width:1400px;margin:0 auto}
+  .view{display:none}
+  .view.live{display:block;animation:fade .24s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- hero + stats ---------- */
+  .hero{
+    border-radius:var(--r);padding:26px 24px;margin-bottom:14px;position:relative;overflow:hidden;
+    background:linear-gradient(140deg,#2e1f18,#4a2a1e 55%,#3d3320);
+    border:none;box-shadow:var(--shadow-md);color:#f6ecd9;
+  }
+  .hero::after{
+    content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;
+    background:radial-gradient(circle,rgba(201,166,104,.30),transparent 68%);pointer-events:none;
+  }
+  .hero h2{font-family:Georgia,serif;font-weight:400;font-size:30px;line-height:1.12;margin-bottom:8px;color:#f6ecd9}
+  .hero p{font-size:14px;color:rgba(246,236,217,.72);line-height:1.55;max-width:46ch}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+  .stat{
+    border:none;border-radius:22px;background:var(--surface);box-shadow:var(--shadow-sm);
+    padding:18px 12px;text-align:center;
+  }
+  .stat b{display:block;font-family:Georgia,serif;font-size:26px;color:var(--gold);font-weight:400;line-height:1.15}
+  .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:600}
+
+  /* ---------- big menu cards ---------- */
+  .menu{display:grid;gap:14px;grid-template-columns:1fr}
+  .mbtn{
+    position:relative;border-radius:var(--r);padding:24px 22px;text-align:left;width:100%;display:block;
+    background:var(--surface);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow-sm);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  /* each door into the hoard gets one of Korvold's three colours as a soft wash */
+  .mbtn::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(420px 150px at 0% 0%, var(--wash,transparent), transparent 72%);
+  }
+  .mbtn[data-go="decks"]{--wash:rgba(110,163,85,.20)}
+  .mbtn[data-go="moves"]{--wash:rgba(196,69,58,.20)}
+  .mbtn[data-go="signing"]{--wash:rgba(227,183,101,.18)}
+  .mbtn::after{content:"→";position:absolute;right:22px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:20px;opacity:.5}
+  .mbtn:active{transform:scale(.985)}
+  .mbtn .k{font-size:10.5px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;font-weight:700;position:relative}
+  .mbtn h2{font-family:Georgia,serif;font-weight:400;font-size:25px;color:var(--text);margin:8px 0 7px;position:relative}
+  .mbtn p{font-size:13.5px;color:var(--muted);line-height:1.6;padding-right:26px;position:relative}
+
+  /* ---------- list rows ---------- */
+  .rows{display:grid;gap:12px}
+  .lrow{
+    position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:0;
+    border:1px solid rgba(217,180,91,.16);border-radius:20px;background:var(--surface);overflow:hidden;min-height:92px;
+  }
+  .lrow:active{background:var(--surface2);transform:scale(.99)}
+  .lrow .por{width:96px;flex:0 0 96px;align-self:stretch;background:var(--surface3) center/cover no-repeat;position:relative}
+  .lrow .por::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 35%,var(--surface))}
+  .lrow .body{flex:1;min-width:0;padding:14px 34px 14px 0}
+  .lrow h3{font-family:Georgia,serif;font-weight:400;font-size:17px;color:var(--text);line-height:1.25}
+  .lrow .m{font-size:12.5px;color:var(--muted);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lrow .chev{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--gold);opacity:.5;font-size:20px}
+  .lrow .val{font-size:13px;color:var(--green);margin-top:4px;font-weight:600}
+
+  /* wishlist banners — the cover art fills the whole row instead of a 96px strip,
+     with a scrim heavy enough on the left that the name stays readable over any art */
+  .lrow.banner{min-height:104px}
+  .lrow.banner .por{position:absolute;inset:0;width:auto;flex:none}
+  .lrow.banner .por::after{background:linear-gradient(90deg,rgba(13,10,11,.94) 22%,rgba(13,10,11,.62) 62%,rgba(13,10,11,.42))}
+  .lrow.banner .body{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;
+                     gap:12px;padding:16px 38px 16px 18px}
+  .lrow.banner .br{text-align:right;flex:0 0 auto}
+  .lrow.banner .br .val{font-size:16px;margin-top:0}
+  .lrow.banner .bl{min-width:0}
+
+  /* ---------- sections ---------- */
+  .sec{
+    font-family:Georgia,serif;font-size:18px;color:var(--text);margin:24px 0 12px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-weight:400;
+  }
+  .sec span{font-size:12px;color:var(--muted);font-family:inherit}
+  .note{font-size:13.5px;color:var(--muted);line-height:1.65;margin:0 0 14px;
+        background:var(--surface);border-left:3px solid var(--gold);border-radius:0 14px 14px 0;padding:12px 14px}
+  .totalbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    border:1px solid rgba(217,180,91,.2);border-radius:20px;
+    background:linear-gradient(135deg,var(--surface2),var(--surface));padding:16px 18px;margin-bottom:8px;
+  }
+  .totalbar .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+  .totalbar .v{font-family:Georgia,serif;font-size:26px;color:var(--gold);margin-top:2px}
+
+  /* ---------- card grid ---------- */
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+  .card{
+    position:relative;border:1px solid rgba(217,180,91,.16);background:var(--surface);
+    overflow:hidden;padding:0;text-align:left;width:100%;display:block;border-radius:18px;
+  }
+  .card:active{transform:scale(.97);border-color:var(--gold)}
+  .grid.art .card img{width:100%;aspect-ratio:626/457;object-fit:cover;display:block;background:var(--surface3)}
+  .grid.full .card img{width:100%;aspect-ratio:488/680;object-fit:cover;display:block;background:var(--surface3)}
+  .card .plate{padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+  .grid.full .card .plate{display:none}
+  .card .nm{font-size:12.5px;line-height:1.35;color:var(--text);min-width:0}
+  .card .tg{font-size:10.5px;color:var(--muted);margin-top:3px}
+  .card .pz{font-size:12px;color:var(--green);white-space:nowrap;flex:0 0 auto;font-weight:600}
+  .card .miss{
+    aspect-ratio:626/457;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    padding:12px;text-align:center;line-height:1.35;font-size:11.5px;color:var(--muted);background:var(--surface3);
+  }
+  .card .miss b{font-weight:500;color:var(--text)}
+  .grid.full .card .pricetag{position:absolute;left:0;bottom:0;background:rgba(13,10,11,.9);color:var(--green);
+    font-size:11px;padding:4px 9px;border-top-right-radius:12px;font-weight:600}
+  .grid.art .card .pricetag{display:none}
+  .badge{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;font-size:9.5px;
+    letter-spacing:.06em;padding:4px 9px;text-transform:uppercase;z-index:3;border-radius:9px;font-weight:600}
+  .badge.cmd{background:var(--gold);color:var(--bg)}
+  .badge.combo{background:var(--green)}
+  .del{position:absolute;top:8px;left:8px;width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;
+    display:none;align-items:center;justify-content:center;font-size:15px;z-index:4}
+  body.editing .del{display:flex}
+  .tick{position:absolute;top:8px;left:8px;width:32px;height:32px;border-radius:50%;
+        background:rgba(13,10,11,.8);border:1px solid rgba(217,180,91,.35);color:var(--gold);
+        font-size:15px;display:flex;align-items:center;justify-content:center;z-index:4}
+  .card.got{border-color:var(--green)}
+  .card.got img{opacity:.4}
+  .card.got .tick{background:var(--green);color:#fff;border-color:var(--green)}
+
+  /* ---------- bottom tab bar ---------- */
+  /* floating bubble nav — detached pill, line icons, active one ringed */
+  .tabs{
+    position:fixed;z-index:70;display:flex;align-items:center;gap:2px;
+    left:50%;transform:translateX(-50%);
+    bottom:calc(14px + var(--sab));
+    width:min(430px, calc(100% - 28px - var(--sal) - var(--sar)));
+    padding:7px;border-radius:34px;
+    background:rgba(30,22,19,.82);
+    border:1px solid rgba(227,183,101,.16);
+    box-shadow:0 10px 34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+    -webkit-backdrop-filter:saturate(170%) blur(22px); backdrop-filter:saturate(170%) blur(22px);
+  }
+  .tab{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:7px 2px;border-radius:26px;color:var(--muted);
+    font-size:10px;letter-spacing:.03em;min-height:52px;font-weight:600;
+    transition:color .18s ease;
+  }
+  .tab .ic{
+    width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;border:1.5px solid transparent;transition:border-color .2s ease, background .2s ease;
+  }
+  .tab .ic svg{width:19px;height:19px;display:block;fill:none;stroke:currentColor;
+               stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .tab.on{color:var(--gold)}
+  .tab.on .ic{border-color:var(--gold);background:var(--gold-glow)}
+  .tab:active .ic{transform:scale(.9)}
+
+  /* ---------- sheet ---------- */
+  .modal{position:fixed;inset:0;z-index:95;display:none;background:rgba(5,3,4,.8);
+         -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .modal.live{display:block}
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;top:36px;background:var(--surface);
+    border-top:1px solid rgba(217,180,91,.3);border-radius:26px 26px 0 0;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    padding:0 calc(18px + var(--sar)) calc(34px + var(--sab)) calc(18px + var(--sal));
+    animation:up .3s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes up{from{transform:translateY(100%)}to{transform:none}}
+  .grab{position:sticky;top:0;z-index:5;background:var(--surface);padding:11px 0 8px;margin:0 -18px 6px;display:flex;justify-content:center}
+  .grab i{width:44px;height:5px;border-radius:3px;background:rgba(217,180,91,.35);display:block}
+  .x{position:sticky;top:8px;float:right;z-index:6;width:40px;height:40px;border-radius:50%;
+     background:var(--surface3);border:1px solid rgba(217,180,91,.28);color:var(--gold);font-size:18px;
+     display:flex;align-items:center;justify-content:center}
+  #sheet img{width:100%;border-radius:16px;display:block;margin-bottom:14px}
+  #sheet h3{font-family:Georgia,serif;font-size:22px;color:var(--text);font-weight:400;margin-bottom:5px}
+  #sheet .tl{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+  #sheet .ot{font-size:14.5px;line-height:1.75;white-space:pre-wrap;background:var(--surface2);
+             border-radius:16px;padding:14px 16px;margin-bottom:16px}
+  #sheet .kv{font-size:12.5px;color:var(--muted);line-height:2.1}
+  #sheet .kv b{color:var(--gold);font-weight:400}
+  #sheet .big{font-family:Georgia,serif;font-size:30px;color:var(--green);margin:2px 0 14px}
+
+  /* ---------- forms ---------- */
+  label{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
+  .inp{width:100%;height:50px;background:var(--surface2);border:1px solid rgba(217,180,91,.2);border-radius:16px;
+       color:var(--text);padding:0 15px;font-size:16px}
+  .inp:focus{outline:none;border-color:var(--gold)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;
+    border:1px solid rgba(217,180,91,.25);border-radius:16px;background:var(--surface2);font-size:13.5px;color:var(--text)}
+  .btn:active{background:var(--gold);color:var(--bg)}
+  .btn.primary{background:linear-gradient(135deg,var(--gold),var(--ember));color:var(--bg);border:none;font-weight:700}
+  .btn.wide{width:100%;margin-top:18px}
+  .btn.sm{min-height:38px;padding:0 14px;font-size:12px;border-radius:13px}
+  /* small centered "Arts" button under the card image in the detail sheet */
+  /* margin-top matters: .card-detail zeroes the image's bottom margin on desktop,
+     so without it the button sits flush against the card art */
+  /* stacked, not side by side — the left column of the sheet is only 320px on desktop
+     and these pills read as a short menu, not a toolbar */
+  .artsbar{display:flex;flex-direction:column;align-items:center;gap:8px;margin:18px 0 6px}
+  .artsbtn{
+    min-height:40px;padding:0 22px;border-radius:20px;font-size:13px;font-weight:600;
+    background:var(--surface2);border:1px solid rgba(227,183,101,.30);color:var(--gold);
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .artsbtn:active{background:var(--gold);color:#1a1311}
+  .card.owned{outline:2px solid var(--gold);outline-offset:-2px}
+  .card.picked{outline:3px solid var(--green);outline-offset:-3px}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .err{color:#ff9c93;font-size:13px;margin-top:11px;line-height:1.5;min-height:1px}
+  .ok{color:var(--green);font-size:13px;margin-top:11px}
+
+  /* ---------- misc ---------- */
+  .status{font-size:12.5px;color:var(--muted);line-height:1.7;
+          padding:0 calc(16px + var(--sar)) 0 calc(16px + var(--sal))}
+  .status:not(:empty){padding-top:10px}
+  .status .hdr{text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+  .status code{background:var(--surface3);padding:2px 8px;border-radius:7px;color:var(--gold);
+               font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:nowrap;display:inline-block;margin:2px 0}
+  .spin{display:inline-block;width:10px;height:10px;border:2px solid var(--gold);border-top-color:transparent;
+        border-radius:50%;animation:sp .8s linear infinite;margin-right:8px;vertical-align:middle}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .empty{text-align:center;padding:44px 22px;color:var(--muted);font-size:14px;line-height:1.75}
+  footer{display:none}
+
+  @media (min-width:430px){ .grid.full{grid-template-columns:repeat(3,1fr)} }
+  @media (min-width:760px){
+    /* the bubble stays a bubble on desktop — it just gets a little roomier */
+    .tabs{width:min(520px, calc(100% - 48px));bottom:calc(20px + var(--sab))}
+    .tab{font-size:11px}
+    .tab .ic{width:36px;height:36px}
+    .tab .ic svg{width:20px;height:20px}
+    .menu{grid-template-columns:repeat(3,1fr)}
+    .rows{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+    .grid.full{grid-template-columns:repeat(auto-fill,minmax(185px,1fr))}
+    main{padding:14px calc(24px + var(--sar)) 50px calc(24px + var(--sal))}
+    body.tools .toolbar{display:flex;gap:12px;align-items:center}
+    .search{width:300px}
+    .chips{margin-top:0;flex-wrap:wrap;overflow:visible}
+    .sheet{position:relative;margin:4vh auto;max-width:920px;top:0;bottom:auto;max-height:92vh;
+           border-radius:24px;border:1px solid rgba(217,180,91,.3);padding:26px;animation:fade .2s}
+    .modal.live{display:flex;align-items:flex-start;justify-content:center;overflow:auto}
+    .grab{display:none}
+    #sheet.card-detail{display:grid;grid-template-columns:320px 1fr;gap:26px}
+    #sheet.card-detail img{margin-bottom:0}
+  }
+  @media (hover:hover) and (pointer:fine){
+    .mbtn:hover,.lrow:hover{background:var(--surface2);border-color:rgba(217,180,91,.4)}
+    .card:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 12px 28px rgba(0,0,0,.6)}
+    .icobtn:hover{background:var(--surface3)}
+    .chip:hover{color:var(--text)}
+    .tab:hover{color:var(--gold)}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="hazard"></div>
+
+<header class="appbar">
+  <div class="row">
+    <button class="icobtn ghost" id="back" aria-label="Back">‹</button>
+    <div class="barttl">
+      <h1 id="barTitle">Korvold's Hoard</h1>
+      <div class="sub" id="barSub">Fae-Cursed King</div>
+    </div>
+    <button class="icobtn" id="actBtn" aria-label="Action" hidden>⊞</button>
+    <button class="icobtn" id="gearBtn" aria-label="Settings">⚙</button>
+  </div>
+  <div class="toolbar">
+    <input class="search" id="search" placeholder="Filter cards…" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    <div class="chips" id="chips"></div>
+  </div>
+</header>
+
+<div class="status" id="net"></div>
+<main id="main">
+  <div id="bootmsg" class="empty" style="border:1px solid var(--gold-dim);border-radius:14px;background:var(--plate);padding:26px 20px">
+    <div style="font-family:Georgia,serif;font-size:19px;color:var(--gold);letter-spacing:.1em;margin-bottom:12px">THE HOARD LIES SEALED</div>
+    <div style="text-align:left;max-width:460px;margin:0 auto;line-height:1.75">
+      This page is still loading, or JavaScript is switched off in whatever is showing it.<br><br>
+      <b style="color:var(--bone)">If you are looking at this inside the Claude app's file preview, that preview does not run scripts.</b>
+      Tap the download arrow at the top of the preview to save the file, then open it in Safari — the whole app lives in the script and needs a real browser.
+    </div>
+  </div>
+</main>
+<noscript><div class="empty">JavaScript is required. Open this file in Safari or Chrome.</div></noscript>
+<footer></footer>
+<nav class="tabs" id="tabs">
+  <button class="tab" data-tab="home"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6 4 9v10.4h16V9z"/><path d="M9.5 19.4v-5.2h5v5.2"/></svg></span>Hoard</button>
+  <button class="tab" data-tab="decks"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="10" height="14" rx="2.2"/><path d="M16.5 6.6a2 2 0 0 1 2 2v8.8a2 2 0 0 1-2 2"/><path d="M20 8.6v6.8"/></svg></span>Decks</button>
+  <button class="tab" data-tab="wishes"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 4.6h10.4v14.8L12 15.9l-5.2 3.5z"/><path d="M9.6 9.2h4.8"/></svg></span>Wishlist</button>
+  <button class="tab" data-tab="moves"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.6h13"/><path d="m13.8 5.2 3.4 3.4-3.4 3.4"/><path d="M20 15.4H7"/><path d="m10.2 12 -3.4 3.4 3.4 3.4"/></svg></span>Devoured</button>
+  <button class="tab" data-tab="signing"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.4h16"/><path d="M15.3 4.9a1.9 1.9 0 0 1 2.7 2.7l-8.2 8.2-3.5.8.8-3.5z"/></svg></span>Signing</button>
+</nav>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <div class="grab"><i></i></div>
+    <button class="x" id="closeX" aria-label="Close">✕</button>
+    <div id="sheet"></div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+   1. DEFAULT DATA
+   ========================================================== */
+const T={LAND:'Land',MANA:'Mana',ENGINE:'Engine',COMBO:'Combo',CLONE:'Clone',TUTOR:'Tutor',INT:'Interaction',REC:'Recursion',ADD:'Added'};
+
+const CALGAR_99=[["Amphibian Downpour",T.INT],["An Offer You Can't Refuse",T.INT],["Ancient Den",T.LAND],
+["Ancient Tomb",T.LAND],["Angel's Grace",T.INT],["Arcane Signet",T.MANA],["Beseech the Mirror",T.TUTOR],
+["Bloodstained Mire",T.LAND],["Borne Upon a Wind",T.INT],["Cavern of Souls",T.LAND],["Chrome Mox",T.MANA],
+["City of Brass",T.LAND],["Clever Impersonator",T.CLONE],["Command Tower",T.LAND],["Commandeer",T.INT],
+["Copy Enchantment",T.CLONE],["Culling the Weak",T.MANA],["Dark Ritual",T.MANA],["Demonic Tutor",T.TUTOR],
+["Diabolic Intent",T.TUTOR],["Dread Return",T.REC],["Emergence Zone",T.LAND],["Enlightened Tutor",T.TUTOR],
+["Esper Sentinel",T.ENGINE],["Exotic Orchard",T.LAND],["Faerie Mastermind",T.ENGINE],["Fellwar Stone",T.MANA],
+["Flash Photography",T.CLONE],["Flesh Duplicate",T.CLONE],["Flooded Strand",T.LAND],["Flusterstorm",T.INT],
+["Force of Negation",T.INT],["Force of Will",T.INT],["Gemstone Caverns",T.LAND],["Gleaming Splendor",T.ENGINE],
+["Godless Shrine",T.LAND],["Hallowed Fountain",T.LAND],["High Fae Trickster",T.INT],["Imperial Seal",T.TUTOR],
+["Into the Flood Maw",T.INT],["Kambal, Profiteering Mayor",T.COMBO],["Lim-Dûl's Vault",T.TUTOR],
+["Lively Dirge",T.TUTOR],["Lotho, Corrupt Shirriff",T.ENGINE],["Lotus Petal",T.MANA],["Mana Confluence",T.LAND],
+["Mana Vault",T.MANA],["Marsh Flats",T.LAND],["Mental Misstep",T.INT],["Mindbreak Trap",T.INT],
+["Mirrormade",T.CLONE],["Misdirection",T.INT],["Misty Rainforest",T.LAND],["Mnemonic Betrayal",T.REC],
+["Mockingbird",T.CLONE],["Monologue Tax",T.ENGINE],["Morphic Pool",T.LAND],["Mox Amber",T.MANA],
+["Mox Diamond",T.MANA],["Mox Opal",T.MANA],["Mystic Remora",T.ENGINE],["Mystical Tutor",T.TUTOR],
+["Ocelot Pride",T.ENGINE],["Opposition Agent",T.INT],["Orcish Bowmasters",T.INT],["Orim's Chant",T.INT],
+["Otawara, Soaring City",T.LAND],["Pact of Negation",T.INT],["Phyrexian Metamorph",T.CLONE],
+["Polluted Delta",T.LAND],["Ranger-Captain of Eos",T.TUTOR],["Rhystic Study",T.ENGINE],
+["Ruthless Technomancer",T.COMBO],["Scalding Tarn",T.LAND],["Scrubland",T.LAND],["Sea of Clouds",T.LAND],
+["Silence",T.INT],["Smothering Tithe",T.ENGINE],["Snapback",T.INT],["Sol Ring",T.MANA],["Starting Town",T.LAND],
+["Step Through",T.TUTOR],["Stridehangar Automaton",T.COMBO],["Swan Song",T.INT],["Swords to Plowshares",T.INT],
+["Talisman of Progress",T.MANA],["Tataru Taru",T.ENGINE],["The Queen of Dale",T.ENGINE],["Timetwister",T.REC],
+["Trickbind",T.INT],["Tundra",T.LAND],["Underground Sea",T.LAND],["Vampiric Tutor",T.TUTOR],
+["Voice of Victory",T.INT],["Wan Shi Tong, Librarian",T.ENGINE],["Warren Soultrader",T.COMBO],
+["Watery Grave",T.LAND],["Windswept Heath",T.LAND]];
+
+const CALGAR_MAYBE=["Bard, King of Dale","Charismatic Conqueror","Demonic Consultation","Exalted Sunborn",
+"Fierce Guardianship","Grand Abolisher","Grim Hireling","Imposter Mech","Mister Fantastic, Reed Richards",
+"Monastery Mentor","Permission Denied","Replenish","Scheming Symmetry","Sevinne's Reclamation","Tainted Pact",
+"Talisman of Dominance","Thassa's Oracle","The Meathook Massacre","Touch the Spirit Realm",
+"Yawgmoth, Thran Physician","Zombie Infestation"];
+
+const RAL_SOURCES=[
+ {id:'zada',name:'Zada, Hedron Grinder',cmd:'Zada, Hedron Grinder',
+  cards:["Past in Flames","Red Elemental Blast","Ruby Medallion"],swaps:[]},
+ {id:'azula',name:'Firelord Azula',cmd:'Firelord Azula',cards:["Desperate Ritual"],swaps:[]},
+ {id:'ghyrson',name:'Ghyrson Starn, Kelermorph',cmd:'Ghyrson Starn, Kelermorph',
+  cards:["Gemstone Caverns","Force of Will","Chrome Mox","Ancient Tomb","Mana Vault","Scalding Tarn","Mox Amber",
+  "Deflecting Swat","Underworld Breach","Gamble","Chain of Vapor","Mental Misstep","Pyroblast","Rite of Flame",
+  "Steam Vents","Pyretic Ritual","Seething Song","Jeska's Will","Flusterstorm","Springleaf Drum","Strike It Rich",
+  "Electro, Assaulting Battery","Brain Freeze","Windfall","Snap"],
+  swaps:["Sol Ring","Arcane Signet","Grapeshot"]},
+ {id:'korvold',name:'Korvold, Fae-Cursed King',cmd:'Korvold, Fae-Cursed King',
+  cards:["Lotus Petal","Redirect Lightning","Hexing Squelcher","Lion's Eye Diamond"],swaps:[]}
+];
+const RAL_KEY=["Underworld Breach","Lion's Eye Diamond","Brain Freeze","Electro, Assaulting Battery",
+ "Past in Flames","Ruby Medallion","Grapeshot","Hexing Squelcher"];
+
+const DECKDATA=[
+{id:"calgar-cedh",name:"Marneus CalDIH",sub:"cEDH · Esper",commander:"Marneus Calgar",count:102,cards:"Amphibian Downpour|An Offer You Can't Refuse|Ancient Tomb|Angel's Grace|Arcane Signet|Beseech the Mirror|Bloodstained Mire|Borne Upon a Wind|Cavern of Souls|Chrome Mox|City of Brass|Clever Impersonator|Command Tower|Commandeer|Copy Enchantment|Culling the Weak|Dark Ritual|Demonic Consultation|Demonic Tutor|Emergence Zone|Enlightened Tutor|Esper Sentinel|Exalted Sunborn|Exotic Orchard|Faerie Mastermind|Fellwar Stone|Flash Photography|Flesh Duplicate|Flooded Strand|Flusterstorm|Force of Negation|Force of Will|Gemstone Caverns|Godless Shrine|Grand Abolisher|Grim Hireling|Hallowed Fountain|High Fae Trickster|Homunculus Horde|Imperial Seal|Into the Flood Maw|Kambal, Profiteering Mayor|Lively Dirge|Lotho, Corrupt Shirriff|Lotus Petal|Mana Confluence|Mana Vault|Marneus Calgar|Marsh Flats|Mental Misstep|Mindbreak Trap|Misdirection|Mister Fantastic, Reed Richards|Misty Rainforest|Mnemonic Betrayal|Mockingbird|Monologue Tax|Morphic Pool|Mox Diamond|Mox Opal|Mystic Remora|Mystical Tutor|Ocelot Pride|Opposition Agent|Orcish Bowmasters|Orim's Chant|Otawara, Soaring City|Pact of Negation|Permission Denied|Phyrexian Metamorph|Polluted Delta|Ranger-Captain of Eos|Rhystic Study|Ruthless Technomancer|Scalding Tarn|Scrubland|Sea of Clouds|Silence|Smothering Tithe|Sol Ring|Starting Town|Step Through|Stridehangar Automaton|Swan Song|Swords to Plowshares|Tainted Pact|Talisman of Progress|Tataru Taru|Thassa's Oracle|Timetwister|Training Grounds|Trickbind|Tundra|Underground Sea|Vampiric Tutor|Vault of Champions|Voice of Victory|Wan Shi Tong, Librarian|Warren Soultrader|Watery Grave|Windswept Heath|Zombie Infestation"},
+{id:"calgar-b3",name:"Marneus Calgar",sub:"Bracket 3 · Esper",commander:"Marneus Calgar",count:100,cards:"Adarkar Wastes|Amphibian Downpour|An Offer You Can't Refuse|Ancient Tomb|April O'Neil, Human Element|Arcane Signet|Archivist of Oghma|Arid Mesa|Ashnod's Altar|Basalt Monolith|Beseech the Mirror|Bitterblossom|Black Market Connections|Bloodstained Mire|Borne Upon a Wind|Cabal Ritual|Cavern of Souls|Caves of Koilos|Charismatic Conqueror|Chrome Mox|City of Brass|Command Tower|Commandeer|Culling the Weak|Dark Ritual|Diabolic Intent|Elas il-Kor, Sadistic Pilgrim|Enlightened Tutor|Esper Sentinel|Exalted Sunborn|Exotic Orchard|Faerie Artisans|Faerie Mastermind|Fellwar Stone|Fierce Guardianship|Flooded Strand|Flusterstorm|Force of Negation|Forensic Gadgeteer|Gemstone Caverns|Generous Gift|Gleaming Splendor|Grim Monolith|Hallowed Fountain|Imperial Seal|Into the Flood Maw|Jadar, Ghoulcaller of Nephalia|Kambal, Profiteering Mayor|Lim-Dûl's Vault|Lotho, Corrupt Shirriff|Lotus Petal|Mana Confluence|Mana Vault|Marneus Calgar|Marsh Flats|Mirrormade|Mister Fantastic, Reed Richards|Misty Rainforest|Mondrak, Glory Dominus|Monologue Tax|Morphic Pool|Nadier's Nightblade|Nadir Kraken|Ocelot Pride|Oketra's Monument|Orcish Bowmasters|Permission Denied|Phyrexian Altar|Pitiless Plunderer|Polluted Delta|Rev, Tithe Extractor|Scalding Tarn|Scheming Symmetry|Scrubland|Scuttletide|Sea of Clouds|Silence|Smothering Tithe|Sol Ring|Stridehangar Automaton|Swords to Plowshares|Talisman of Progress|Tataru Taru|Thassa's Oracle|The Queen of Dale|Training Grounds|Tundra|Underground Sea|Urza's Saga|Vault of Champions|Verdant Catacombs|Voice of Victory|Warren Soultrader|Watery Grave|Windswept Heath|Zombie Infestation"},
+{id:"ral",name:"Ral, Monsoon Mage",sub:"Izzet Storm",commander:"Ral, Monsoon Mage",count:100,cards:"Ancient Tomb|Arcane Signet|Arid Mesa|Big Score|Birgi, God of Storytelling|Bloodstained Mire|Bonus Round|Borne Upon a Wind|Brain Freeze|Chrome Mox|City of Brass|Command Tower|Deflecting Swat|Demand Answers|Desperate Ritual|Ecstatic Beauty|Electro, Assaulting Battery|Embrace the Unknown|Faithless Looting|Fierce Guardianship|Fiery Islet|Flame of Anor|Flashback|Flusterstorm|Frantic Search|Gamble|Geistwave|Gemstone Caverns|Gifts Ungiven|Gitaxian Probe|Glimpse the Impossible|Grapeshot|Hex Magic|Hexing Squelcher|Highway Robbery|Intuition|Invoke Calamity|Jeska's Will|Light Up the Stage|Lion's Eye Diamond|Lock and Load|Lotus Petal|Mana Confluence|Mana Vault|Mental Misstep|Mizzix's Mastery|Mox Amber|Mox Opal|Mystic Remora|Mystical Tutor|Opera Love Song|Overmaster|Pact of Negation|Past in Flames|Pirate's Pillage|Pyretic Ritual|Pyroblast|Ral, Monsoon Mage|Reckless Impulse|Red Elemental Blast|Redirect Lightning|Reiterate|Return the Favor|Rite of Flame|Riverpyre Verge|Rob the Archives|Ruby Medallion|Runaway Steam-Kin|Scalding Tarn|Sea Gate Restoration|Seething Song|Seize the Spoils|Shatterskull Smashing|Shivan Reef|Sink into Stupor|Snap|Sol Ring|Solve the Equation|Springleaf Drum|Steam Vents|Storm-Kiln Artist|Strike It Rich|Sundering Eruption|Talisman of Creativity|Tavern Scoundrel|The Vision and Scarlet Witch|Training Center|Underworld Breach|Unexpected Windfall|Untimely Malfunction|Urabrask|Valakut Awakening|Vision of Love|Volcanic Island|Wheel of Fortune|Wheel of Misfortune|Will of the Jeskai|Wooded Foothills|Wrenn's Resolve"},
+{id:"turbokorvold",name:"TurboKorvold",sub:"Jund · combo",commander:"Korvold, Fae-Cursed King",count:100,cards:"Ad Nauseam|Ancient Tomb|Arcane Signet|Arid Mesa|Badlands|Bayou|Beseech the Mirror|Birds of Paradise|Blood Crypt|Bloodstained Mire|Bolas's Citadel|Boseiju, Who Endures|Cabal Ritual|Chain of Smog|Chrome Mox|City of Brass|City of Traitors|Command Tower|Crop Rotation|Culling Ritual|Culling the Weak|Dark Ritual|Deathrite Shaman|Defense Grid|Deflecting Swat|Diabolic Intent|Dosan the Falling Leaf|Elves of Deep Shadow|Elvish Spirit Guide|Emergence Zone|Entomb|Final Fortune|Gamble|Gemstone Caverns|Goblin Engineer|Goblin Welder|Grim Monolith|Grinding Station|Hexing Squelcher|Ignoble Hierarch|Imperial Seal|Impulsive Pilferer|Knuckles the Echidna|Korvold, Fae-Cursed King|Lion's Eye Diamond|Lively Dirge|Lotus Petal|Magda, Brazen Outlaw|Mana Confluence|Mana Vault|Manamorphose|Marsh Flats|Misty Rainforest|Mox Diamond|Mox Opal|Nature's Rhythm|Necropotence|Noxious Revival|Ominous Harvest|Orcish Bowmasters|Orcish Lumberjack|Overgrown Tomb|Polluted Delta|Praetor's Grasp|Prized Statue|Professional Face-Breaker|Pyroblast|Ragavan, Nimble Pilferer|Rain of Filth|Red Elemental Blast|Redirect Lightning|Reverent Silence|Rite of Flame|Ruthless Technomancer|Scalding Tarn|Shifting Woodland|Simian Spirit Guide|Skirk Prospector|Sol Ring|Starting Town|Stomping Ground|Storm-Kiln Artist|Stridehangar Automaton|Strike It Rich|Taiga|Tainted Pact|Talon Gates of Madara|The Cabbage Merchant|Tinder Wall|Underworld Breach|Vampiric Tutor|Veil of Summer|Verdant Catacombs|Vexing Bauble|Warren Soultrader|Wheel of Fortune|Wishclaw Talisman|Witherbloom Apprentice|Wooded Foothills|Worldly Tutor"},
+{id:"landfallkorvold",name:"LandfallKorvold",sub:"Jund · landfall",commander:"Korvold, Fae-Cursed King",count:100,cards:"Ad Nauseam|Aftermath Analyst|Allosaurus Shepherd|Ancient Tomb|Animate Dead|Arid Mesa|Badlands|Bayou|Birds of Paradise|Blood Crypt|Bloodstained Mire|Boseiju, Who Endures|Cabal Ritual|Chain of Smog|Chrome Mox|City of Traitors|Command Tower|Crop Rotation|Culling Ritual|Culling the Weak|Darigaaz's Caldera|Dark Ritual|Deflecting Swat|Dosan the Falling Leaf|Dryad Arbor|Eldritch Evolution|Elvish Spirit Guide|Emergence Zone|Entomb|Exploration|Exploration Broodship|Final Fortune|Gaea's Cradle|Gemstone Caverns|Green Sun's Zenith|Grinding Station|Hexing Squelcher|Icetill Explorer|Ignoble Hierarch|Imperial Seal|Korvold, Fae-Cursed King|Krosan Wayfarer|Life from the Loam|Lion's Eye Diamond|Lively Dirge|Lotus Cobra|Lotus Petal|Lumra, Bellow of the Woods|Mana Confluence|Mana Vault|Marsh Flats|Misty Rainforest|Mox Diamond|Mox Opal|Nature's Rhythm|Necropotence|Nissa, Resurgent Animist|Opposition Agent|Orcish Bowmasters|Orcish Lumberjack|Overgrown Tomb|Polluted Delta|Prismatic Vista|Pyroblast|Ragavan, Nimble Pilferer|Rain of Filth|Reanimate|Red Elemental Blast|Reverent Silence|Rite of Flame|Ruthless Technomancer|Scalding Tarn|Shifting Woodland|Simian Spirit Guide|Six|Sol Ring|Squandered Resources|Stomping Ground|Stridehangar Automaton|Summoner's Pact|Sylvan Safekeeper|Taiga|Talon Gates of Madara|The Cabbage Merchant|Tinder Wall|Tireless Provisioner|Underworld Breach|Urborg, Tomb of Yawgmoth|Vampiric Tutor|Verdant Catacombs|Vexing Bauble|Warren Soultrader|Wild Cantor|Windswept Heath|Witherbloom Apprentice|Wooded Foothills|Worldly Tutor|Yavimaya, Cradle of Growth"},
+{id:"robin",name:"Divorce That Damn Robin",sub:"Group hug",commander:"Kynaios and Tiro of Meletis",count:101,cards:"An Offer You Can't Refuse|Arcane Signet|Arid Mesa|Awakening|Birds of Paradise|Black Widow, Agile Avenger|Bloom Tender|Breeding Pool|Chord of Calling|Command Tower|Commandeer|Consecrated Sphinx|Dawn's Truce|Deflecting Palm|Deflecting Swat|Dictate of Kruphix|Dovin's Veto|Exotic Orchard|Exploration|Faeburrow Elder|Faerie Mastermind|Final Fortune|Finale of Devastation|Flooded Strand|Fog|Folio of Fancies|Force of Negation|Gaea's Cradle|Gleaming Splendor|Hallowed Fountain|Heartwood Storyteller|Heroic Intervention|High Fae Trickster|Homunculus Horde|Horn of Greed|Howling Mine|Insurrection|Jace, Wielder of Mysteries|Kami of the Crescent Moon|King T'Challa|Kwain, Itinerant Meddler|Kynaios and Tiro of Meletis|Laboratory Maniac|Leyline of Anticipation|Lotus Petal|Mana Drain|Misdirection|Misty Rainforest|Molecule Man|Nature's Rhythm|On the Trail|Path to Exile|Permission Denied|Plateau|Puca's Mischief|Ragavan, Nimble Pilferer|Reflecting Pool|Reliquary Tower|Rites of Flourishing|Sacred Foundry|Savannah|Scalding Tarn|Sea Gate Restoration|Selvala, Explorer Returned|Silence|Smothering Tithe|Smuggler's Share|Sol Ring|Spectator Seating|Spire Garden|Stardew Valley|Steam Vents|Stomping Ground|Swan Song|Swords to Plowshares|Sylvan Tutor|Taiga|Tataru Taru|Teferi's Ageless Insight|Temple Bell|Temple Garden|Tempt with Bunnies|Tempt with Discovery|Thought Vessel|Training Center|Treasure Vault|Tropical Island|Tundra|Volcanic Island|Wedding Ring|Wheel of Misfortune|Wilderness Reclamation|Windfall|Windswept Heath|Witch Enchanter|Wizard Class|Wooded Foothills|Yavimaya, Cradle of Growth|Zenith Chronicler"}
+];
+
+const CON_ARTISTS=["Randy Gallegos","Jarel Threat","Phil Foglio","Kaja Foglio","RK Post","Jeff Miracola",
+"Mark Tedin","Mark Poole","Liz Danforth","Rob Alexander","Lucas Graciano","Phil Stone","Alex Dos Diaz",
+"Richard Kane Ferguson","Eric Deschamps","Chris Seaman","Dan Scott","Dan Murayama Scott"];
+// short tokens keep each query under Scryfall's 1024-char cap; exact names are
+// re-checked client-side afterwards so loose tokens can't leak the wrong artist in
+const ART_Q='(a:gallegos or a:threat or a:foglio or a:post or a:miracola or a:tedin or a:poole or '+
+ 'a:danforth or a:"rob alexander" or a:graciano or a:"phil stone" or a:diaz or a:ferguson or '+
+ 'a:deschamps or a:seaman or a:"dan scott" or a:murayama)';
+
+const WISHLIST=["Blood Crypt","Bloodstained Mire","Crop Rotation","Deflecting Palm","Defense Grid",
+"Diabolic Intent","Dramatic Reversal","Enlightened Tutor","Esper Sentinel","Exploration","Fellwar Stone",
+"Fierce Guardianship","Flooded Strand","Force of Will","Frantic Search","Gemstone Caverns",
+"Gorion, Wise Mentor","Grand Abolisher","Hallowed Fountain","Horn of Greed","Mizzix's Mastery",
+"Mystical Tutor","Nadaar, Selfless Paladin","Nadir Kraken","Niv-Mizzet, Visionary","Orcish Lumberjack",
+"Overgrown Tomb","Overmaster","Pyroblast","Reiterate","Sensei's Divining Top","Simian Spirit Guide",
+"Smothering Tithe","Spark Double","Steam Vents","Step Through","Stomping Ground","Stonecoil Serpent",
+"Vampiric Tutor","Vnwxt, Verbose Host","Warrior's Oath","Worldly Tutor"];
+
+const COMBO_TAG=new Set(["Warren Soultrader","Stridehangar Automaton","Kambal, Profiteering Mayor",
+"Chain of Smog","Witherbloom Apprentice","Storm-Kiln Artist","Underworld Breach","Lion's Eye Diamond",
+"Brain Freeze","Thassa's Oracle","Demonic Consultation","Tainted Pact","Reiterate","Seething Song"]);
+
+/* The wishlist used to be this one frozen array, readable only by the signing scan.
+   It's now the seed for a real, editable list — same 42 cards, same shape as a deck
+   (id / name / sections) so tiles, totals, filters, the Edit ✕ and per-list art picks
+   all work on it without a parallel set of views. */
+const seedWishlists=()=>[{
+  id:'w-main', name:'Wishlist', sub:'Cards still to buy', cover:null,
+  sections:[{name:'Wanted', note:null, cards:WISHLIST.map(n=>({n,tag:''}))}]
+}];
+
+function defaultState(){
+  const ralCards=[];
+  RAL_SOURCES.forEach(s=>{
+    s.cards.forEach(n=>ralCards.push({n,tag:'from '+s.name.split(',')[0]}));
+    s.swaps.forEach(n=>ralCards.push({n,tag:'art swap · '+s.name.split(',')[0]}));
+  });
+  return {
+    v:3,
+    signed:{},
+    art:{},                       // deck id -> card key -> chosen printing, see setCardArt()
+    wishlists:seedWishlists(),
+    decks: DECKDATA.map(d=>({
+      id:d.id, name:d.name, sub:d.sub, commander:d.commander,
+      sections:[{name:'Decklist',
+        note:(d.count===100?null:('This list is '+d.count+' cards — '+(d.count>100?'+':'')+(d.count-100)+' against a legal 100.')),
+        cards:d.cards.split('|').map(n=>({n,tag:COMBO_TAG.has(n)?'Combo':''}))}]
+    })),
+    moves:[
+      {id:'m-ral',target:'Ral, Monsoon Mage',commander:'Ral, Monsoon Mage',
+       sources:RAL_SOURCES.map(s=>({id:s.id,name:s.name,commander:s.cmd,
+         cards:[...s.cards.map(n=>({n,tag:'removed'})),...s.swaps.map(n=>({n,tag:'art swap — not in tally'}))],
+         listed:s.cards.length, swaps:s.swaps.length}))},
+      {id:'m-korvold',target:'Korvold, Fae-Cursed King',commander:'Korvold, Fae-Cursed King',
+       sources:[{id:'zada',name:'Zada, Hedron Grinder',commander:'Zada, Hedron Grinder',
+         cards:[{n:'Storm-Kiln Artist',tag:'replaced — new copy bought'}], listed:1, swaps:0,
+         note:'A replacement copy was bought for Zada, so Zada is NOT down this card. Net loss to Zada is 3 (all to Ral). Korvold runs the original.'}]}
+    ]
+  };
+}
+
+/* ==========================================================
+   2. PERSISTENCE  (localStorage, with graceful fallback)
+   ========================================================== */
+const LSKEY='codex-armorium-v4';
+let STORAGE_OK=true;
+let STATE;
+
+function load(){
+  try{
+    const raw=localStorage.getItem(LSKEY);
+    if(raw){
+      STATE=JSON.parse(raw);
+      // saves from before art overrides existed have no .art — add it rather than
+      // bumping LSKEY, which would throw away signing ticks and deck edits
+      if(STATE && STATE.decks){
+        if(!STATE.art) STATE.art={};
+        // saves from before the wishlist was editable get the seeded list, same as a
+        // fresh install — again rather than bumping LSKEY and losing everything else
+        if(!Array.isArray(STATE.wishlists)) STATE.wishlists=seedWishlists();
+        migrateArt(); return;
+      }
+    }
+  }catch(e){ STORAGE_OK=false; }
+  STATE=defaultState();
+}
+/* Art picks used to be one flat card key -> printing map shared by every deck. Saves
+   from then are reshaped into per-deck buckets: the old pick is copied into every deck
+   that actually holds the card, so nothing visibly changes on the upgrade — the picks
+   just stop being linked to each other. A bucket is told apart from a stray old entry
+   by shape: a printing carries .id/.art/.full, a bucket carries card keys. */
+function migrateArt(){
+  if(!STATE.art || typeof STATE.art!=='object'){ STATE.art={}; return; }
+  const old={};
+  Object.keys(STATE.art).forEach(k=>{
+    const v=STATE.art[k];
+    if(v && typeof v==='object' && (v.id||v.art||v.full)){ old[k]=v; delete STATE.art[k]; }
+  });
+  if(!Object.keys(old).length) return;
+  (STATE.decks||[]).forEach(d=>{
+    (d.sections||[]).forEach(s=>(s.cards||[]).forEach(c=>{
+      const k=key(c.n);
+      if(old[k]) (STATE.art[d.id]=STATE.art[d.id]||{})[k]=old[k];
+    }));
+  });
+  save();
+}
+
+function save(){
+  if(!STORAGE_OK) return;
+  try{ localStorage.setItem(LSKEY, JSON.stringify(STATE)); }
+  catch(e){ STORAGE_OK=false; banner(); }
+}
+function resetAll(){
+  try{ localStorage.removeItem(LSKEY); }catch(e){}
+  STATE=defaultState(); save(); go({v:'home'},true);
+}
+
+/* ==========================================================
+   3. SCRYFALL  (card data + TCGplayer market price)
+   ========================================================== */
+const CACHE=new Map();
+const key=n=>n.toLowerCase().replace(/\s+/g,' ').trim();
+let NET='idle', OFFLINE=false, PAINTING=false;
+let _repaint=()=>{};
+/* A repaint replaces #main wholesale, and for the instant the page is empty the browser
+   clamps the scroll offset to the shorter document — so prices streaming in used to walk
+   a scrolled deck back towards the top. Hold the offset across the swap. */
+const REPAINT=()=>{
+  if(PAINTING) return;
+  PAINTING=true;
+  const y=scroller().scrollTop;
+  try{ _repaint(); } finally{ PAINTING=false; scroller().scrollTop=y; }
+};
+const sig=ms=>{const c=new AbortController();setTimeout(()=>c.abort(),ms||6000);return c.signal;};
+
+function banner(){
+  const el=document.getElementById('net'); let h='';
+  if(NET==='loading') h='<span class="spin"></span><span class="hdr">Fetching card data &amp; live prices…</span>';
+  else if(NET==='partial') h='<span class="hdr" style="color:var(--gold)">✦ SOME RAVENS LOST</span> — Scryfall dropped some requests, so a few cards are missing art or pricing. '
+    + 'Everything already loaded is still good. <button class="btn sm" id="retry" style="margin-left:8px">Retry</button>';
+  else if(NET==='fail') h='<span class="hdr" style="color:#ff8a8a">✦ NO RAVEN RETURNS</span> — can\'t reach Scryfall, so there\'s no art, no pricing and no signing scan. '
+    + (location.protocol==='file:'
+        ? 'Cause: you opened this straight from a file. Browsers refuse to let file-based pages call other websites. '
+          + 'Fix: serve it instead — see Settings &rarr; How to fix this.'
+        : (window.top!==window.self
+            ? 'Cause: this is running inside a preview pane, which blocks outside requests. '
+              + 'Fix: open the file in a normal browser tab of its own, not a preview.'
+            : 'Cause: the request to Scryfall failed. Check your internet connection, or whether a VPN, firewall or ad-blocker is blocking api.scryfall.com.'))
+    + ' Your decklists still work. <button class="btn sm" id="retry" style="margin-left:8px">Retry</button>';
+  if(!STORAGE_OK) h+=(h?'<br>':'')+'<span class="hdr" style="color:#ff8a8a">▲ STORAGE BLOCKED</span> — edits will not survive a reload here. Open the file in Safari.';
+  el.innerHTML=h;
+}
+
+/* Views call loadCards() on their last line, and those same views ARE _repaint.
+   So the REPAINT() inside the fetch loop re-enters the view, which calls loadCards
+   again for whatever isn't cached yet — a second run racing the first, with its own
+   good=0, latching OFFLINE the moment Scryfall rate-limits one of them. PAINTING
+   doesn't stop it: loadCards is async, so it returns at its first await and the
+   guard releases. INFLIGHT is what actually stops it — a repaint-triggered call
+   finds every outstanding name already claimed and returns without fetching.
+   NETGEN lets Retry disown runs that are still in flight, so a stale failure
+   can't re-latch OFFLINE after the user has cleared it. */
+let NETGEN=0;
+let EVER_OK=false;          // has Scryfall ever answered this session?
+let COOLDOWN=0;             // timestamp; OFFLINE no longer latches, so this is what
+                            // stops every repaint from re-firing a doomed fetch
+const INFLIGHT=new Map();   // card key -> the NETGEN that claimed it
+
+async function fetchBatch(batch){
+  let lastErr;
+  for(let attempt=0;attempt<3;attempt++){
+    if(attempt) await new Promise(x=>setTimeout(x,600*attempt));
+    try{
+      const r=await fetch('https://api.scryfall.com/cards/collection',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({identifiers:batch.map(n=>({name:n}))}),signal:sig(9000)});
+      if(r.ok){ EVER_OK=true; return r.json(); }
+      // 429/503 is Scryfall throttling, not a dead link — back off before giving up,
+      // otherwise a throttled response gets counted as success and caches nothing.
+      if(r.status===429||r.status===503){ lastErr=new Error('scryfall '+r.status); continue; }
+      throw new Error('scryfall '+r.status);
+    }catch(e){
+      lastErr=e;
+      // a dropped connection (TypeError) or a 9s timeout (AbortError) is worth another go;
+      // small views are a single batch, so one blip is otherwise the whole session's verdict
+      if(e.name==='AbortError'||e.name==='TypeError') continue;
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
+async function loadCards(names){
+  const gen=NETGEN;
+  const need=[...new Set(names)].filter(n=>n && !CACHE.has(key(n)) && !INFLIGHT.has(key(n)));
+  if(!need.length) return;
+  if(OFFLINE){ NET='fail'; banner(); return; }   // no REPAINT here — the caller is mid-paint, re-entering recurses
+  if(Date.now()<COOLDOWN){ NET=EVER_OK?'partial':'fail'; banner(); return; }
+  need.forEach(n=>INFLIGHT.set(key(n),gen));
+  NET='loading'; banner();
+  let good=0,bad=0;
+  try{
+    for(let i=0;i<need.length;i+=70){
+      if(gen!==NETGEN) return;                   // a Retry superseded this run
+      const batch=need.slice(i,i+70);
+      try{
+        const j=await fetchBatch(batch);
+        (j.data||[]).forEach(c=>{
+          CACHE.set(key(c.name),c);
+          (c.card_faces||[]).forEach(f=>{ if(!CACHE.has(key(f.name))) CACHE.set(key(f.name),c); });
+        });
+        good++; REPAINT();
+        for(const nf of (j.not_found||[])){
+          if(OFFLINE || gen!==NETGEN) break;
+          await new Promise(r=>setTimeout(r,110));
+          const c2=await lookupOne(nf.name);
+          if(c2) CACHE.set(key(nf.name),c2);
+        }
+        REPAINT();
+      }catch(e){
+        bad++;
+        // Only ever latch OFFLINE if Scryfall has NEVER answered this session. Everything
+        // the NO VOX-LINK banner diagnoses (file://, preview pane, adblock, no internet)
+        // is constant for the session, so it cannot become true after art has loaded —
+        // a later failure is a blip, and latching on it killed pricing app-wide.
+        if(!good){
+          if(gen===NETGEN){
+            if(EVER_OK) COOLDOWN=Date.now()+15000;
+            else { OFFLINE=true; LAST_NETFAIL=true; }
+          }
+          break;
+        }
+      }
+      await new Promise(r=>setTimeout(r,110));
+    }
+  } finally {
+    // only release names this run still owns — a newer generation may have re-claimed them
+    need.forEach(n=>{ if(INFLIGHT.get(key(n))===gen) INFLIGHT.delete(key(n)); });
+  }
+  if(gen!==NETGEN) return;
+  NET = bad ? (good||EVER_OK ? 'partial' : 'fail') : 'ok';
+  banner(); REPAINT();
+}
+
+let LAST_NETFAIL=false;
+
+/* A failed request has to reach the top banner, not just whichever sheet asked for it.
+   This used to happen by accident: OFFLINE latched on the first stumble, so the banner
+   was already up before you could tap anything. Now that a blip no longer condemns the
+   session, lookupOne has to report for itself — otherwise a card sheet says "couldn't
+   reach Scryfall" while the top of the app looks perfectly healthy. */
+function netFailed(){
+  LAST_NETFAIL=true;
+  if(EVER_OK){ COOLDOWN=Date.now()+15000; NET='partial'; }
+  else { OFFLINE=true; NET='fail'; }
+  banner();
+}
+
+async function lookupOne(name,ms){
+  LAST_NETFAIL=false;
+  if(OFFLINE||Date.now()<COOLDOWN){ LAST_NETFAIL=true; return null; }
+  try{
+    const r=await fetch('https://api.scryfall.com/cards/named?fuzzy='+encodeURIComponent(name),{signal:sig(ms||9000)});
+    if(r.status===404) return null;               // genuinely not a card
+    if(!r.ok){ netFailed(); return null; }
+    const c=await r.json(); EVER_OK=true; CACHE.set(key(c.name),c); return c;
+  }catch(e){ netFailed(); return null; }          // offline / timeout
+}
+
+const artOf =c=>!c?null:(c.image_uris?.art_crop)||(c.card_faces?.[0]?.image_uris?.art_crop)||null;
+const fullOf=c=>!c?null:(c.image_uris?.normal)||(c.card_faces?.[0]?.image_uris?.normal)||null;
+
+/* Chosen printings for deck tiles. The image URLs are stored, not just the id, so a
+   reload paints the picked art immediately without a lookup — and unlike prices, a
+   Scryfall image URL is stable, so there's nothing here that can go stale.
+
+   Picks are scoped per deck: STATE.art is deck id -> card key -> printing. The same
+   card sits in several decks and each one gets to wear its own art, so picking a
+   printing in Korvold must not repaint it in Ral. Views without a deck behind them
+   (a move's source list, the signing scan) pass no deck id and always show the
+   default printing. */
+const artBucket=deckId=>(deckId&&STATE.art&&STATE.art[deckId])||null;
+const artPick=(name,deckId)=>{ const b=artBucket(deckId); return (b&&b[key(name)])||null; };
+function setCardArt(deckId,name,c){
+  if(!deckId) return;
+  if(!STATE.art) STATE.art={};
+  const b=STATE.art[deckId]=STATE.art[deckId]||{};
+  b[key(name)]={id:c.id,art:artOf(c),full:fullOf(c),artist:c.artist||'',set:c.set_name||''};
+  save();
+}
+function clearCardArt(deckId,name){
+  const b=artBucket(deckId); if(!b) return;
+  delete b[key(name)];
+  if(!Object.keys(b).length) delete STATE.art[deckId];
+  save();
+}
+function tileArt(name,deckId){
+  const o=artPick(name,deckId);
+  if(o) return MODE==='art'?o.art:o.full;
+  const card=CACHE.get(key(name));
+  return MODE==='art'?artOf(card):fullOf(card);
+}
+function priceOf(name){
+  const c=CACHE.get(key(name)); if(!c||!c.prices) return null;
+  const p=c.prices.usd||c.prices.usd_foil||c.prices.usd_etched;
+  return p?Number(p):null;
+}
+const money=v=>v==null?'—':'$'+v.toFixed(2);
+function totalOf(names){
+  let sum=0,known=0,unknown=0;
+  names.forEach(n=>{const p=priceOf(n); if(p==null)unknown++; else{sum+=p;known++;}});
+  return {sum,known,unknown};
+}
+
+/* ==========================================================
+   4. NAVIGATION  (explicit stack — back always works)
+   ========================================================== */
+let STACK=[{v:'home'}];
+let MODE='art', EDIT=false;
+const here=()=>STACK[STACK.length-1];
+
+/* Each route on the stack is a layer, and a layer remembers where it was scrolled to.
+   Opening Arts from a card two thirds of the way down a 100-card deck used to dump you
+   back at the top of the deck on Back — the list you were reading was gone. The scroll
+   offset is stashed on the route being left and put back when it resurfaces.
+
+   Restoring needs the second pass: render() paints synchronously but the browser hasn't
+   laid the new content out yet, so on the first pass the page is still short and the
+   scroll clamps to whatever fits. Tiles reserve their height via aspect-ratio, so one
+   frame later the full height is there and the offset lands. */
+const scroller=()=>document.scrollingElement||document.documentElement;
+function scrollTo(y){
+  scroller().scrollTop=y;
+  requestAnimationFrame(()=>{ scroller().scrollTop=y; });
+}
+function go(route,replace){
+  here().scroll=scroller().scrollTop;
+  if(replace) STACK=[route]; else STACK.push(route);
+  render();
+  scrollTo(route.scroll||0);          // a new layer opens at its own top
+}
+function back(){
+  if(STACK.length<=1) return;
+  STACK.pop(); render();
+  scrollTo(here().scroll||0);
+}
+
+/* ==========================================================
+   5. RENDER
+   ========================================================== */
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const findDeck=id=>STATE.decks.find(d=>d.id===id);
+const findWish=id=>(STATE.wishlists||[]).find(w=>w.id===id);
+/* Decks and wishlists share a shape, so anything that just needs "the list with this
+   id" — the Edit ✕, Add Card, the arts picker's caption — takes either. */
+const findList=id=>findDeck(id)||findWish(id);
+const findMove=id=>STATE.moves.find(m=>m.id===id);
+
+function setBar(title,sub,opts={}){
+  document.getElementById('barTitle').textContent=title;
+  document.getElementById('barSub').textContent=sub||'';
+  document.getElementById('back').classList.toggle('ghost',STACK.length<=1);
+  const act=document.getElementById('actBtn');
+  act.hidden=!opts.action; if(opts.action) act.textContent=opts.action;
+  document.body.classList.toggle('tools',!!opts.tools);
+  if(!opts.tools){ document.getElementById('search').value=''; document.getElementById('chips').innerHTML=''; }
+}
+
+function render(){
+  // same clamp as REPAINT: an in-place re-render (filter chip, art pick, Edit toggle)
+  // must not move the page. go()/back() set the offset they want after this returns.
+  const y=scroller().scrollTop;
+  const r=here();
+  const top={home:'home',decks:'decks',deck:'decks',wishes:'wishes',wish:'wishes',
+             moves:'moves',move:'moves',source:'moves',signing:'signing',arts:'signing'}[r.v];
+  document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===top));
+  document.body.classList.toggle('editing',EDIT && (r.v==='deck'||r.v==='wish'));
+  ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,
+    moves:vMoves,move:vMove,source:vSource,signing:vSigning,arts:vArts}[r.v]||vHome)(r);
+  scroller().scrollTop=y;
+}
+
+/* ---------- home ---------- */
+function vHome(){
+  _repaint=paintHomeStats;              // only the numbers refresh, never the buttons
+  setBar("Korvold's Hoard",'Fae-Cursed King');
+  const movedCount=STATE.moves.reduce((a,m)=>a+m.sources.reduce((b,s)=>b+s.cards.length,0),0);
+  document.getElementById('main').innerHTML=`
+    <div class="hero">
+      <h2>The Hoard</h2>
+      <p>Whenever you sacrifice a permanent, draw a card. Six decks, every card, live pricing.</p>
+    </div>
+    <div class="stats" id="homestats">${statTiles()}</div>
+    <div class="menu">
+      <button class="mbtn" data-go="decks">
+        <div class="k">The Vaults</div><h2>Decks</h2>
+        <p>Every deck in the archive. Cards, art, tags and live market pricing.</p>
+      </button>
+      <button class="mbtn" data-go="moves">
+        <div class="k">The Devoured</div><h2>Removed Cards</h2>
+        <p>What got stripped out of which deck, and where it went. ${movedCount} cards logged.</p>
+      </button>
+      <button class="mbtn" data-go="signing">
+        <div class="k">The Royal Seal</div><h2>Signing</h2>
+        <p>Every card you own with a printing by an artist at the con, grouped by artist. Tick them off as they're signed.</p>
+      </button>
+    </div>`;
+  loadCards(STATE.decks.map(d=>d.commander));
+}
+function statTiles(){
+  const all=STATE.decks.flatMap(d=>d.sections.flatMap(s=>s.cards.map(c=>c.n)));
+  const t=totalOf(all);
+  return `<div class="stat"><b>${STATE.decks.length}</b><span>Decks</span></div>
+    <div class="stat"><b>${all.length}</b><span>Cards</span></div>
+    <div class="stat"><b>${t.known?money(t.sum):'—'}</b><span>Market</span></div>`;
+}
+function paintHomeStats(){
+  const el=document.getElementById('homestats');
+  if(el) el.innerHTML=statTiles();     // buttons stay in the DOM, so taps never miss
+}
+
+/* ---------- deck list ---------- */
+function vDecks(){
+  _repaint=()=>{ if(here().v==='decks') vDecks(); };
+  setBar('Decks',STATE.decks.length+' in archive',{action:'＋'});
+  document.getElementById('main').innerHTML=`<div class="rows">${
+    STATE.decks.map(d=>{
+      const names=d.sections.flatMap(s=>s.cards.map(c=>c.n));
+      const t=totalOf(names); const art=artOf(CACHE.get(key(d.commander)));
+      return `<button class="lrow" data-deck="${esc(d.id)}">
+        <div class="por" style="${art?`background-image:url('${art}')`:''}"></div>
+        <div class="body">
+          <h3>${esc(d.name)}</h3>
+          <div class="m">${esc(d.commander)} · ${names.length} cards</div>
+          <div class="val">${t.known?money(t.sum):'—'}${t.unknown?` <span style="color:var(--bone-dim)">(${t.unknown} unpriced)</span>`:''}</div>
+        </div><div class="chev">›</div></button>`;
+    }).join('')}</div>
+    ${STATE.decks.length?'':'<div class="empty">No decks yet.<br>Tap ＋ to add one.</div>'}`;
+  loadCards(STATE.decks.map(d=>d.commander));
+}
+
+/* ---------- one deck ---------- */
+function vDeck(r){
+  _repaint=()=>{ if(here().v==='deck') vDeck(here()); };
+  const d=findDeck(r.id); if(!d) return back();
+  const allNames=d.sections.flatMap(s=>s.cards.map(c=>c.n));
+  setBar(d.name,d.sub||d.commander,{tools:true,action:'＋'});
+
+  // chips
+  const tags=[...new Set(d.sections.flatMap(s=>s.cards.map(c=>c.tag)).filter(Boolean))].sort();
+  const chipbar=document.getElementById('chips');
+  if(chipbar.dataset.for!==d.id){
+    chipbar.innerHTML=tags.map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
+    chipbar.dataset.for=d.id;
+  }
+  const active=chipbar.querySelector('.chip.on')?.dataset.tag||'';
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  const t=totalOf(allNames);
+
+  let shown=0;
+  const body=d.sections.map(s=>{
+    let cards=s.cards;
+    if(q) cards=cards.filter(c=>c.n.toLowerCase().includes(q));
+    if(active) cards=cards.filter(c=>c.tag===active);
+    if(!cards.length) return '';
+    shown+=cards.length;
+    const st=totalOf(cards.map(c=>c.n));
+    return `<div class="sec">${esc(s.name)}<span>${cards.length} cards · ${st.known?money(st.sum):'—'}</span></div>
+      ${s.note&&!q&&!active?`<div class="note">${esc(s.note)}</div>`:''}
+      <div class="grid ${MODE}">${cards.map(c=>cardTile(c,d.id,s.name)).join('')}</div>`;
+  }).join('');
+
+  document.getElementById('main').innerHTML=`
+    <div class="totalbar">
+      <div><div class="l">Market Value · TCGplayer</div><div class="v">${t.known?money(t.sum):'—'}</div></div>
+      <div style="text-align:right">
+        <div class="l">${allNames.length} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
+        <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
+          <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
+          <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
+        </div>
+      </div>
+    </div>
+    ${body||'<div class="empty">Nothing matches that filter.</div>'}`;
+  loadCards(allNames);
+}
+
+/* ---------- wishlists ---------- */
+const coverOf=c=>({name:c.name,art:artOf(c),full:fullOf(c)});
+function wishCover(w){
+  if(w.cover&&w.cover.art) return w.cover.art;
+  // no cover chosen — borrow the first card in the list that has art, so a new list
+  // isn't a blank slab until you get round to picking one
+  for(const s of w.sections) for(const c of s.cards){
+    const a=artOf(CACHE.get(key(c.n))); if(a) return a;
+  }
+  return null;
+}
+const wishNames=w=>w.sections.flatMap(s=>s.cards.map(c=>c.n));
+
+function vWishes(){
+  _repaint=()=>{ if(here().v==='wishes') vWishes(); };
+  const ws=STATE.wishlists||[];
+  setBar('Wishlist',ws.length+(ws.length===1?' list':' lists'),{action:'＋'});
+  const all=allWishNames(), grand=totalOf(all);
+  document.getElementById('main').innerHTML=`
+    <div class="totalbar">
+      <div><div class="l">Wanted · TCGplayer</div><div class="v">${grand.known?money(grand.sum):'—'}</div></div>
+      <div style="text-align:right"><div class="l">${all.length} card${all.length===1?'':'s'}${grand.unknown?` · ${grand.unknown} unpriced`:''}</div></div>
+    </div>
+    <div class="rows">${ws.map(w=>{
+      const names=wishNames(w), t=totalOf(names), cov=wishCover(w);
+      return `<button class="lrow banner" data-wish="${esc(w.id)}">
+        <div class="por" style="${cov?`background-image:url('${cov}')`:''}"></div>
+        <div class="body">
+          <div class="bl">
+            <h3>${esc(w.name)}</h3>
+            <div class="m">${names.length} card${names.length===1?'':'s'}${w.sub?' · '+esc(w.sub):''}</div>
+          </div>
+          <div class="br">
+            <div class="val">${t.known?money(t.sum):'—'}</div>
+            ${t.unknown?`<div class="m">${t.unknown} unpriced</div>`:''}
+          </div>
+        </div><div class="chev">›</div></button>`;
+    }).join('')}</div>
+    ${ws.length?'':'<div class="empty">No wishlists yet.<br>Tap ＋ to start one.</div>'}`;
+  loadCards(all.concat(ws.map(w=>w.cover&&w.cover.name).filter(Boolean)));
+}
+
+function vWish(r){
+  _repaint=()=>{ if(here().v==='wish') vWish(here()); };
+  const w=findWish(r.id); if(!w) return back();
+  const allNames=wishNames(w);
+  setBar(w.name,w.sub||`${allNames.length} card${allNames.length===1?'':'s'} wanted`,{tools:true,action:'＋'});
+
+  const tags=[...new Set(w.sections.flatMap(s=>s.cards.map(c=>c.tag)).filter(Boolean))].sort();
+  const chipbar=document.getElementById('chips');
+  if(chipbar.dataset.for!==w.id){
+    chipbar.innerHTML=tags.map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
+    chipbar.dataset.for=w.id;
+  }
+  const active=chipbar.querySelector('.chip.on')?.dataset.tag||'';
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  const t=totalOf(allNames);
+
+  const body=w.sections.map(s=>{
+    let cards=s.cards;
+    if(q) cards=cards.filter(c=>c.n.toLowerCase().includes(q));
+    if(active) cards=cards.filter(c=>c.tag===active);
+    if(!cards.length) return '';
+    const st=totalOf(cards.map(c=>c.n));
+    return `<div class="sec">${esc(s.name)}<span>${cards.length} cards · ${st.known?money(st.sum):'—'}</span></div>
+      ${s.note&&!q&&!active?`<div class="note">${esc(s.note)}</div>`:''}
+      <div class="grid ${MODE}">${cards.map(c=>cardTile(c,w.id,s.name)).join('')}</div>`;
+  }).join('');
+
+  document.getElementById('main').innerHTML=`
+    <div class="totalbar">
+      <div><div class="l">To Buy · TCGplayer</div><div class="v">${t.known?money(t.sum):'—'}</div></div>
+      <div style="text-align:right">
+        <div class="l">${allNames.length} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
+        <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
+          <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
+          <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
+          <button class="btn sm" id="wishEdit">List…</button>
+        </div>
+      </div>
+    </div>
+    ${body||(allNames.length?'<div class="empty">Nothing matches that filter.</div>'
+                            :'<div class="empty">Nothing on this list yet.<br>Tap ＋ to add a card.</div>')}`;
+  loadCards(allNames);
+}
+
+function cardTile(c,deckId,sectName){
+  const src=tileArt(c.n,deckId);          // honours this deck's chosen printing, else the default
+  const p=priceOf(c.n);
+  let badge='';
+  if(c.tag===T.COMBO) badge='<div class="badge combo">Combo</div>';
+  else if(RAL_KEY.includes(c.n)) badge='<div class="badge combo">Key</div>';
+  const img=src?`<img loading="lazy" src="${src}" alt="${esc(c.n)}">`
+                :`<div class="miss"><b>${esc(c.n)}</b><span style="font-size:8.5px;letter-spacing:.14em;opacity:.55">NO IMAGE</span></div>`;
+  return `<div class="card" data-card="${esc(c.n)}" ${deckId?`data-deck="${esc(deckId)}" data-sect="${esc(sectName)}"`:''}>
+    ${badge}${deckId?`<button class="del" data-del="1" aria-label="Remove">✕</button>`:''}
+    ${img}${MODE==='full'?`<div class="pricetag">${money(p)}</div>`:''}
+    <div class="plate">
+      <div style="min-width:0"><div class="nm">${esc(c.n)}</div>${c.tag?`<div class="tg">${esc(c.tag)}</div>`:''}</div>
+      <div class="pz">${money(p)}</div>
+    </div></div>`;
+}
+
+
+/* ---------- SIGNING: scan every deck + wishlist against the con lineup ---------- */
+let SCAN=null, SCANNING=false, SCANMSG='', ARTFILTER='';
+
+/* The scan reads the live wishlists, not the frozen WISHLIST const it used to — adding a
+   card to a list has to put it in front of the con artists too, or the list is a lie. */
+function allWishNames(){
+  const s=new Set();
+  (STATE.wishlists||[]).forEach(w=>w.sections.forEach(sec=>sec.cards.forEach(c=>s.add(c.n))));
+  return [...s];
+}
+function allOwnedNames(){
+  const s=new Set(allWishNames());
+  STATE.decks.forEach(d=>d.sections.forEach(sec=>sec.cards.forEach(c=>s.add(c.n))));
+  return [...s];
+}
+function decksWith(name){
+  return STATE.decks.filter(d=>d.sections.some(s=>s.cards.some(c=>c.n===name))).map(d=>d.name);
+}
+function wishesWith(name){
+  return (STATE.wishlists||[]).filter(w=>w.sections.some(s=>s.cards.some(c=>c.n===name))).map(w=>w.name);
+}
+function byConArtist(a){
+  if(!a) return null;
+  // card.artist may be "Phil Foglio & Kaja Foglio" — match any lineup member
+  const hit=CON_ARTISTS.filter(n=>a.toLowerCase().includes(n.toLowerCase()));
+  return hit.length?hit:null;
+}
+function queryChunks(names,budget){
+  const out=[]; let cur=[];
+  for(const n of names){
+    const t=cur.concat([n]);
+    const q='('+t.map(x=>'!"'+x+'"').join(' or ')+') '+ART_Q;
+    if(q.length>budget && cur.length){ out.push(cur); cur=[n]; } else cur=t;
+  }
+  if(cur.length) out.push(cur);
+  return out;
+}
+
+async function runScan(){
+  if(SCANNING) return;
+  SCANNING=true; SCAN=null; ARTFILTER='';
+  const names=allOwnedNames().sort();
+  const parts=queryChunks(names,1000);
+  const found=new Map();           // scryfall id -> card
+  let done=0, failed=0;
+  for(const part of parts){
+    const q='('+part.map(x=>'!"'+x+'"').join(' or ')+') '+ART_Q;
+    let url='https://api.scryfall.com/cards/search?q='+encodeURIComponent(q)+'&unique=art&order=artist';
+    for(let page=0; page<12 && url; page++){
+      try{
+        const r=await fetch(url,{signal:sig(12000)});
+        if(r.status===404) break;            // this chunk simply had no hits
+        if(!r.ok){ failed++; break; }
+        const j=await r.json();
+        (j.data||[]).forEach(c=>{
+          if(!byConArtist(c.artist)) return;
+          const k=(c.illustration_id||c.id)+'|'+c.artist;   // one entry per artwork
+          if(!found.has(k)) found.set(k,c);
+        });
+        url = j.has_more ? j.next_page : null;
+      }catch(e){ failed++; break; }
+      await new Promise(r=>setTimeout(r,110));
+    }
+    done++;
+    SCANMSG='Scanning '+done+' / '+parts.length+' — '+found.size+' printings found';
+    if(here().v==='signing') vSigning();
+    await new Promise(r=>setTimeout(r,110));
+  }
+  // group by artist
+  const groups={};
+  [...found.values()].forEach(c=>{
+    byConArtist(c.artist).forEach(a=>{ (groups[a]=groups[a]||[]).push(c); });
+  });
+  Object.values(groups).forEach(v=>v.sort((x,y)=>x.name.localeCompare(y.name)));
+  const byId=new Map(); [...found.values()].forEach(c=>byId.set(c.id,c));
+  SCAN={groups, byId, total:found.size, cards:new Set([...found.values()].map(c=>c.name)), failed, parts:parts.length, searched:names.length};
+  SCANNING=false; SCANMSG='';
+  if(here().v==='signing') vSigning();
+}
+
+function vSigning(){
+  _repaint=()=>{ if(here().v==='signing') vSigning(); };
+  setBar('Signing','Con artist crossover',{tools:!!SCAN});
+  const m=document.getElementById('main');
+
+  if(SCANNING){
+    m.innerHTML='<div class="empty"><span class="spin"></span>'+esc(SCANMSG||'Starting…')+
+      '<br><br>Querying Scryfall in batches. This takes a moment the first time.</div>';
+    return;
+  }
+  if(!SCAN){
+    m.innerHTML=`<div class="note">Checks every card across your ${STATE.decks.length} decks plus the ${allWishNames().length}-card wishlist
+      against the ${CON_ARTISTS.length} artists at the con, and returns every printing they illustrated —
+      all arts, not just the one you own.</div>
+      <button class="btn primary wide" id="scanBtn">Run the scan</button>
+      <div class="sec">Artists at the con<span>${CON_ARTISTS.length}</span></div>
+      <div class="note">${CON_ARTISTS.map(esc).join(' · ')}</div>`;
+    return;
+  }
+
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  const arts=Object.keys(SCAN.groups).sort((a,b)=>SCAN.groups[b].length-SCAN.groups[a].length);
+  const cb=document.getElementById('chips');
+  if(cb.dataset.for!=='signing'){
+    cb.innerHTML=arts.map(a=>`<button class="chip" data-art="${esc(a)}">${esc(a.split(' ').pop())} ${SCAN.groups[a].length}</button>`).join('');
+    cb.dataset.for='signing';
+  }
+  const signedCount=Object.values(STATE.signed||{}).filter(Boolean).length;
+  let html=`<div class="totalbar">
+      <div><div class="l">Signable printings</div><div class="v">${SCAN.total}</div></div>
+      <div style="text-align:right"><div class="l">${SCAN.cards.size} distinct cards · ${signedCount} ticked</div>
+      <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
+        <button class="btn sm" id="rescanBtn">Rescan</button></div></div></div>`;
+  if(SCAN.failed) html+=`<div class="note">${SCAN.failed} batch(es) failed — tap Rescan if the list looks short.</div>`;
+
+  const wishSet=new Set(allWishNames());   // one pass, not a linear scan per tile
+  arts.forEach(a=>{
+    if(ARTFILTER && a!==ARTFILTER) return;
+    let list=SCAN.groups[a];
+    if(q) list=list.filter(c=>c.name.toLowerCase().includes(q));
+    if(!list.length) return;
+    html+=`<div class="sec">${esc(a)}<span>${list.length} printings</span></div><div class="grid art">`;
+    list.forEach(c=>{
+      const art=artOf(c), p=c.prices&&c.prices.usd?Number(c.prices.usd):null;
+      const inDecks=decksWith(c.name);
+      const isWish=wishSet.has(c.name);
+      const k=c.id, on=(STATE.signed||{})[k];
+      html+=`<div class="card${on?' got':''}" data-card="${esc(c.name)}" data-sid="${esc(k)}">
+        ${isWish?'<div class="badge cmd">Wishlist</div>':''}
+        ${on?'<div class="badge combo">Signed</div>':''}
+        ${art?`<img loading="lazy" src="${art}" alt="${esc(c.name)}">`:`<div class="miss"><b>${esc(c.name)}</b></div>`}
+        <div class="plate"><div style="min-width:0">
+          <div class="nm">${esc(c.name)}</div>
+          <div class="tg">${esc(c.set_name||'')} · ${esc(c.collector_number||'')}</div>
+          <div class="tg" style="color:var(--gold)">${esc(c.artist||'')}</div>
+          ${inDecks.length?`<div class="tg" style="color:var(--ultra-lt)">${inDecks.map(x=>esc(x.split(' ')[0])).join(', ')}</div>`:''}
+        </div><div class="pz">${money(p)}</div></div>
+        <button class="tick" data-tick="${esc(k)}">${on?'✓':'○'}</button>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  m.innerHTML=html;
+}
+
+/* ---------- removed-cards: which deck received them ---------- */
+function vMoves(){
+  _repaint=()=>{ if(here().v==='moves') vMoves(); };
+  setBar('Removed Cards','Choose the deck they went into');
+  document.getElementById('main').innerHTML=`
+    <div class="note">Pick the deck that <b style="color:var(--gold)">received</b> the cards, then pick which deck they came out of.</div>
+    <div class="rows">${STATE.moves.map(m=>{
+      const n=m.sources.reduce((a,s)=>a+s.cards.length,0);
+      const art=artOf(CACHE.get(key(m.commander)));
+      const t=totalOf(m.sources.flatMap(s=>s.cards.map(c=>c.n)));
+      return `<button class="lrow" data-move="${esc(m.id)}">
+        <div class="por" style="${art?`background-image:url('${art}')`:''}"></div>
+        <div class="body"><h3>${esc(m.target)}</h3>
+          <div class="m">${m.sources.length} source decks · ${n} cards</div>
+          <div class="val">${t.known?money(t.sum):'—'}</div></div>
+        <div class="chev">›</div></button>`;
+    }).join('')}</div>`;
+  loadCards(STATE.moves.map(m=>m.commander));
+}
+
+/* ---------- source commanders for a move ---------- */
+function vMove(r){
+  _repaint=()=>{ if(here().v==='move') vMove(here()); };
+  const m=findMove(r.id); if(!m) return back();
+  setBar(m.target,'Stripped from these decks');
+  document.getElementById('main').innerHTML=`
+    <div class="note">Tap a commander to see exactly what left that deck.</div>
+    <div class="rows">${m.sources.map(s=>{
+      const art=artOf(CACHE.get(key(s.commander)));
+      const t=totalOf(s.cards.map(c=>c.n));
+      return `<button class="lrow" data-source="${esc(m.id)}|${esc(s.id)}">
+        <div class="por" style="${art?`background-image:url('${art}')`:''}"></div>
+        <div class="body"><h3>${esc(s.name.split(',')[0])}</h3>
+          <div class="m">−${s.cards.length} cards${s.swaps?` · incl. ${s.swaps} art swaps`:''}</div>
+          <div class="val">${t.known?money(t.sum):'—'}</div></div>
+        <div class="chev">›</div></button>`;
+    }).join('')}</div>`;
+  loadCards(m.sources.map(s=>s.commander));
+}
+
+/* ---------- cards removed from one source ---------- */
+function vSource(r){
+  _repaint=()=>{ if(here().v==='source') vSource(here()); };
+  const m=findMove(r.id); const s=m&&m.sources.find(x=>x.id===r.sid);
+  if(!s) return back();
+  setBar(s.name.split(',')[0],'Cards removed',{tools:true});
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  let cards=s.cards; if(q) cards=cards.filter(c=>c.n.toLowerCase().includes(q));
+  const t=totalOf(s.cards.map(c=>c.n));
+  const warn = (s.swaps ? `<div class="note">The ${s.swaps} art-swap cards were not in the original removal tally — this deck is actually down <b style="color:var(--gold)">${s.listed+s.swaps}</b>, not ${s.listed}.</div>` : '')
+             + (s.note ? `<div class="note">${esc(s.note)}</div>` : '');
+  document.getElementById('main').innerHTML=`
+    <div class="totalbar">
+      <div><div class="l">Value removed</div><div class="v">${t.known?money(t.sum):'—'}</div></div>
+      <div style="text-align:right"><div class="l">${s.cards.length} cards · into ${esc(m.target.split(',')[0])}</div>
+      <div class="btnrow" style="margin-top:6px;justify-content:flex-end"><button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button></div></div>
+    </div>
+    ${warn}
+    <div class="grid ${MODE}">${cards.map(c=>cardTile(c)).join('')}</div>
+    ${cards.length?'':'<div class="empty">Nothing matches that filter.</div>'}`;
+  loadCards(s.cards.map(c=>c.n));
+}
+
+/* ==========================================================
+   6. SHEETS
+   ========================================================== */
+const modal=document.getElementById('modal'), sheet=document.getElementById('sheet');
+const openSheet=(html,cls)=>{ sheet.className=cls||''; sheet.innerHTML=html; modal.classList.add('live'); };
+const closeSheet=()=>modal.classList.remove('live');
+
+/* ==========================================================
+   EVERY ARTWORK OF ONE CARD
+   Reached from the "Arts" button on a card sheet. Shows every distinct
+   illustration that exists for that card — Adarkar Wastes has been painted
+   several times over the years — so you can see which version you'd want
+   signed. Versions by the artist you arrived from are badged.
+
+   Optimisations that matter here:
+   - unique=art (constraint 2) so the six reprints that share one painting
+     collapse to a single tile, plus a defensive illustration_id de-dupe.
+   - art_crop, not normal — roughly a fifth of the bytes, and the grid only ever
+     shows crops anyway.
+   - pages are APPENDED as they arrive rather than re-rendering the grid, so
+     tiles are never rebuilt under a finger mid-tap (constraint 5).
+   - single-flight per card, and results are cached for the session.
+   - the full card object is kept in ART_BY_ID, so tapping a tile opens that
+     exact printing instead of looking it up by name (constraint 3).
+   ========================================================== */
+const ART_SETS=new Map();         // cache key -> {cards, seen, done, failed, truncated}
+const ART_BY_ID=new Map();        // scryfall id -> card object
+const ART_LOADING=new Set();
+
+/* Two modes, one loader.
+   card   — every illustration of the card you tapped. What you want from a deck:
+            Adarkar Wastes has been painted several times, and you're choosing
+            which version to chase.
+   artist — everything that illustrator has painted. What you want from Signing,
+            which is organised by artist because that's how a con queue works.
+   `!"..."` is Scryfall's exact-name match, so "Bolt" can't drag in "Lightning Bolt". */
+function artSpec(mode,subject){
+  return mode==='artist'
+    ? {key:'artist:'+subject, q:'a:"'+subject+'" game:paper', cap:6, order:'released&dir=desc'}
+    : {key:'card:'+subject,   q:'!"'+subject+'" game:paper',  cap:3, order:'released&dir=asc'};
+}
+
+async function loadArts(spec,onPage){
+  let rec=ART_SETS.get(spec.key);
+  if(rec&&rec.done) return rec;
+  if(ART_LOADING.has(spec.key)) return rec;
+  ART_LOADING.add(spec.key);
+  rec=rec||{cards:[],seen:new Set(),done:false,failed:false,truncated:false};
+  ART_SETS.set(spec.key,rec);
+  try{
+    let url='https://api.scryfall.com/cards/search?q='
+      +encodeURIComponent(spec.q)+'&unique=art&order='+spec.order;
+    for(let page=0;page<spec.cap&&url;page++){
+      const r=await fetch(url,{signal:sig(12000)});
+      if(r.status===404) break;                       // no paper art under that name
+      if(!r.ok) throw new Error('scryfall '+r.status);
+      const j=await r.json();
+      EVER_OK=true;
+      const fresh=[];
+      (j.data||[]).forEach(c=>{
+        const k=c.illustration_id||c.id;
+        if(rec.seen.has(k)) return;
+        rec.seen.add(k); rec.cards.push(c); ART_BY_ID.set(c.id,c); fresh.push(c);
+      });
+      // a paint error must not be recorded as a network failure — they are
+      // different problems and conflating them mislabels a working connection
+      if(onPage&&fresh.length){ try{ onPage(fresh,rec); }catch(e){} }
+      url=j.has_more?j.next_page:null;
+      if(url&&page===spec.cap-1) rec.truncated=true;
+      if(url) await new Promise(x=>setTimeout(x,110));   // Scryfall asks ~100ms apart
+    }
+  }catch(e){ rec.failed=true; }
+  finally{ rec.done=true; ART_LOADING.delete(spec.key); }
+  return rec;
+}
+
+/* In card mode the card name is a constant, so the artist is the useful caption
+   and the versions by the artist you came from get badged. In artist mode it is
+   the reverse: caption the card, badge the ones you already own. */
+function artTile(c,mode,mark,owned,deckId){
+  const src=artOf(c);
+  const price=c.prices&&c.prices.usd?'$'+c.prices.usd:'';
+  const caption = mode==='artist' ? (c.name||'—') : (c.artist||'—');
+  // card mode is a picker — tapping sets this deck's tile art. artist mode, and card
+  // mode reached without a deck behind it, are browsers — tapping opens that printing.
+  const picking = mode==='card' && !!deckId;
+  const picked = picking && (artPick(c.name,deckId)||{}).id===c.id;
+  const hit = mode==='artist' ? owned.has(c.name) : (mark && c.artist===mark);
+  const badge = picked ? '<div class="badge cmd">In use</div>'
+              : hit ? `<div class="badge ${mode==='artist'?'cmd':'combo'}">${mode==='artist'?'Owned':'Same artist'}</div>`
+              : '';
+  const hook = picking
+    ? `data-useart="${esc(c.id)}" data-artname="${esc(c.name)}"`
+    : `data-artid="${esc(c.id)}"`;
+  return `<button class="card${picked?' picked':hit?' owned':''}" ${hook}>
+    ${src?`<img loading="lazy" decoding="async" src="${src}" alt="${esc(c.name)}">`
+         :`<div class="miss"><b>${esc(c.name)}</b>no art</div>`}
+    ${badge}
+    <div class="plate"><div style="min-width:0">
+      <div class="nm">${esc(caption)}</div><div class="tg">${esc(c.set_name||'')}</div>
+    </div>${price?`<div class="pz">${price}</div>`:''}</div>
+  </button>`;
+}
+
+function artStatus(rec){
+  if(!rec) return 'Summoning…';
+  if(rec.failed&&!rec.cards.length) return 'Could not reach Scryfall.';
+  return rec.cards.length+' artwork'+(rec.cards.length===1?'':'s')
+    +(rec.done?(rec.truncated?' (capped)':''):' so far…');
+}
+
+function vArts(r){
+  _repaint=()=>{};                        // appended incrementally — never wholesale repainted
+  const mode=r.mode==='artist'?'artist':'card';
+  const subject=r.subject;
+  const deckId=r.deck||'';                // which deck's tiles a pick here applies to
+  const deck=deckId?findList(deckId):null;   // a wishlist gets its own picks too
+  const spec=artSpec(mode,subject);
+  const rec=ART_SETS.get(spec.key);
+  setBar(subject, mode==='artist'?'Every artwork':'Every artwork of this card', {tools:true});
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  // allOwnedNames() returns an array; a Set keeps the per-tile check O(1) across
+  // the several hundred tiles a prolific artist produces.
+  const owned=new Set(allOwnedNames());
+  const match=c=>(c.name||'').toLowerCase().includes(q)
+              ||(c.artist||'').toLowerCase().includes(q)
+              ||(c.set_name||'').toLowerCase().includes(q);
+  const list=rec?(q?rec.cards.filter(match):rec.cards):[];
+  const tiles=cs=>cs.map(c=>artTile(c,mode,r.artist,owned,deckId)).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="totalbar">
+      <div><div class="l">${mode==='artist'?'Illustrated by':'Every artwork of'}</div>
+           <div class="v" style="font-size:22px">${esc(subject)}</div></div>
+      <div style="text-align:right"><div class="l" id="artcount">${esc(artStatus(rec))}</div></div>
+    </div>
+    ${mode==='card'?`<div class="note">${deck
+        ? `Tap any artwork to use it on this card's tiles in <b style="color:var(--gold)">${esc(deck.name)}</b>. Other decks keep their own.`
+        : `Tap any artwork to open that printing. Open this card from inside a deck to change its tile art.`}${
+       artPick(subject,deckId)?` <button class="btn sm" id="artReset" style="margin-left:6px">Use default again</button>`:''}</div>`:''}
+    <div class="grid art" id="artgrid">${tiles(list)}</div>
+    ${!rec||(!rec.done&&!rec.cards.length)?'<div class="empty"><span class="spin"></span>Summoning every artwork…</div>':''}
+    ${rec&&rec.done&&!rec.cards.length?`<div class="empty">Nothing found for ${esc(subject)}.${mode==='artist'?'<br>Scryfall may credit them under a different name.':''}</div>`:''}
+    ${rec&&rec.done&&rec.cards.length&&!list.length?'<div class="empty">Nothing matches that filter.</div>':''}`;
+
+  if(!rec||!rec.done){
+    const still=()=>{ const h=here(); return h.v==='arts'&&h.subject===subject&&(h.mode==='artist'?'artist':'card')===mode&&(h.deck||'')===deckId; };
+    loadArts(spec,(fresh)=>{
+      if(!still()) return;
+      const grid=document.getElementById('artgrid');
+      const count=document.getElementById('artcount');
+      if(count) count.textContent=artStatus(ART_SETS.get(spec.key));
+      if(!grid) return;
+      if(document.getElementById('search').value.trim()) return;  // filtered — let the redraw handle it
+      const spin=grid.parentNode.querySelector('.empty'); if(spin) spin.remove();
+      grid.insertAdjacentHTML('beforeend',tiles(fresh));
+    }).then(()=>{ if(!still()) return;                            // settle final count / empty states
+      const y=scroller().scrollTop; vArts(here()); scroller().scrollTop=y; });
+  }
+}
+
+/* The bar under the card image. Two different questions, so two buttons rather than one
+   that changes meaning with context:
+     Arts of this card  — every artwork of this exact card, and the picker that sets the
+                          deck tile. Versions by the artist you arrived from get badged.
+     Arts by <surname>  — everything that illustrator has painted. Only offered from
+                          Signing, which is organised by artist because that's how a con
+                          queue works; anywhere else it's a detour from the card at hand. */
+function artsBar(c,deckId){
+  if(!c||!c.name) return '';
+  const deck=`data-arts-deck="${esc(deckId||'')}" data-arts-artist="${esc(c.artist||'')}"`;
+  const byArtist = (here().v==='signing' && c.artist)
+    ? `<button class="artsbtn" data-arts="${esc(c.artist)}" data-arts-mode="artist" ${deck}
+        >◈ Arts by ${esc(c.artist.split(' ').slice(-1)[0])}</button>`
+    : '';
+  const ofCard = `<button class="artsbtn" data-arts="${esc(c.name)}" data-arts-mode="card" ${deck}
+        >◈ Arts of this card</button>`;
+  return `<div class="artsbar">${byArtist}${ofCard}</div>`;
+}
+
+function showCardObj(c,deckId){
+  if(!c) return;
+  const faces=(c.card_faces&&c.card_faces[0].image_uris)?c.card_faces:[c];
+  const imgs=faces.map(f=>`<img src="${f.image_uris?.normal||fullOf(c)}" alt="${esc(c.name)}">`).join('');
+  const txt=faces.map(f=>`<b style="color:var(--gold)">${esc(f.name)}${f.mana_cost?' '+esc(f.mana_cost):''}</b>\n${esc(f.type_line||'')}\n\n${esc(f.oracle_text||'')}${f.power?`\n\n${f.power}/${f.toughness}`:''}${f.loyalty?`\n\nLoyalty ${f.loyalty}`:''}`).join('\n\n──────────\n\n');
+  const p=c.prices||{};
+  const inDecks=decksWith(c.name), onWish=wishesWith(c.name);
+  const artsBtn=artsBar(c,deckId);
+  openSheet(`<div>${imgs}${artsBtn}</div><div>
+      <h3>${esc(c.name)}</h3>
+      <div class="tl">${esc(c.set_name||'')} · #${esc(c.collector_number||'')}</div>
+      <div class="l" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Illustrated by</div>
+      <div style="font-family:Georgia,serif;font-size:19px;color:var(--gold);margin:2px 0 10px">${esc(c.artist||'—')}</div>
+      <div class="l" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">TCGplayer market</div>
+      <div class="big">${p.usd?'$'+p.usd:(p.usd_foil?'$'+p.usd_foil+' (foil)':'—')}</div>
+      <div class="ot">${txt}</div>
+      <div class="kv">
+        <b>IN YOUR DECKS</b> ${inDecks.length?esc(inDecks.join(', ')):'—'}<br>
+        ${onWish.length?`<b>ON WISHLIST</b> ${esc(onWish.join(', '))}<br>`:''}
+        <b>MANA VALUE</b> ${c.cmc??'—'}<br>
+        <b>IDENTITY</b> ${(c.color_identity||[]).join('')||'C'}<br>
+        <b>FOIL</b> ${p.usd_foil?'$'+p.usd_foil:'—'}<br>
+        <b>RARITY</b> ${esc(c.rarity||'—')}
+      </div>
+      ${c.scryfall_uri?`<a class="btn wide" href="${c.scryfall_uri}" target="_blank" rel="noopener">Open this printing on Scryfall</a>`:''}
+    </div>`,'card-detail');
+}
+
+/* A pick is stored as a scryfall id, so the sheet for a re-tapped card can show that
+   exact printing — full card image, its own set, its own price. The object usually
+   isn't in memory after a reload, hence the by-id lookup; ART_BY_ID doubles as its
+   cache. If Scryfall can't be reached we fall through to the card by name and paint
+   the stored full-card URL over it, so the picked art still shows offline. */
+async function lookupId(id,ms){
+  const hit=ART_BY_ID.get(id); if(hit) return hit;
+  LAST_NETFAIL=false;
+  if(OFFLINE||Date.now()<COOLDOWN){ LAST_NETFAIL=true; return null; }
+  try{
+    const r=await fetch('https://api.scryfall.com/cards/'+encodeURIComponent(id),{signal:sig(ms||9000)});
+    if(r.status===404) return null;               // printing withdrawn — fall back to the name
+    if(!r.ok){ netFailed(); return null; }
+    const c=await r.json(); EVER_OK=true; ART_BY_ID.set(c.id,c); return c;
+  }catch(e){ netFailed(); return null; }
+}
+
+let SHEET_DECK='';                  // deck the open card sheet was reached from, for Retry
+async function showCard(name,deckId){
+  SHEET_DECK=deckId||'';
+  const pick=artPick(name,deckId);
+  let c=CACHE.get(key(name));
+  openSheet(`<h3>${esc(name)}</h3><div class="tl">Loading…</div>`);
+  if(pick&&pick.id){
+    const pc=await lookupId(pick.id);
+    if(pc) return showCardObj(pc,deckId);
+  }
+  if(!c){ c=await lookupOne(name); }
+  if(!c){
+    const decks=STATE.decks.filter(d=>d.sections.some(s=>s.cards.some(x=>x.n===name))).map(d=>d.name);
+    const netmsg = LAST_NETFAIL
+      ? `<b style="color:#ff8a8a">Couldn't reach Scryfall.</b> This is a connection problem, not a bad card name.`
+             + (location.protocol==='file:' ? ` You've opened this app from a file, and Safari blocks file-based pages from calling other sites — that's why there's no art or pricing. It needs to be served from a web address.` : ` Check your connection and try again.`)
+      : `Scryfall has no card by this exact name. Check the spelling in your decklist.`;
+    openSheet(`<h3>${esc(name)}</h3><div class="tl">${LAST_NETFAIL?'Offline':'Not found'}</div>
+      <div class="ot">${netmsg}</div>
+      ${decks.length?`<div class="kv"><b>IN YOUR DECKS</b><br>${decks.map(esc).join('<br>')}</div>`:''}
+      <button class="btn wide" id="cardRetry">Try again</button>`);
+    return; }
+  const faces=(c.card_faces&&c.card_faces[0].image_uris)?c.card_faces:[c];
+  // offline path for a picked printing: the stored full-card image is all we have of it
+  const imgs=(pick&&pick.full)
+    ? `<img src="${pick.full}" alt="${esc(c.name)}">`
+    : faces.map(f=>`<img src="${f.image_uris?.normal||fullOf(c)}" alt="${esc(c.name)}">`).join('');
+  const txt=faces.map(f=>`<b style="color:var(--gold)">${esc(f.name)}${f.mana_cost?' '+esc(f.mana_cost):''}</b>\n${esc(f.type_line||'')}\n\n${esc(f.oracle_text||'')}${f.power?`\n\n${f.power}/${f.toughness}`:''}${f.loyalty?`\n\nLoyalty ${f.loyalty}`:''}`).join('\n\n──────────\n\n');
+  const p=c.prices||{};
+  const artsBtn=artsBar(c,deckId);
+  openSheet(`<div>${imgs}${artsBtn}</div><div>
+      <h3>${esc(c.name)}</h3><div class="tl">${esc(c.type_line||'')}</div>
+      <div class="l mono" style="font-size:10px;letter-spacing:.15em;color:var(--bone-dim);text-transform:uppercase">TCGplayer market</div>
+      <div class="big">${p.usd?'$'+p.usd:(p.usd_foil?'$'+p.usd_foil+' (foil)':'—')}</div>
+      <div class="ot">${txt}</div>
+      <div class="kv">
+        <b>SET</b> ${esc(c.set_name||'—')}<br>
+        <b>MANA VALUE</b> ${c.cmc??'—'}<br>
+        <b>IDENTITY</b> ${(c.color_identity||[]).join('')||'C'}<br>
+        <b>FOIL</b> ${p.usd_foil?'$'+p.usd_foil:'—'}<br>
+        <b>RARITY</b> ${esc(c.rarity||'—')}
+      </div>
+      ${c.scryfall_uri?`<a class="btn wide" href="${c.scryfall_uri}" target="_blank" rel="noopener">Open on Scryfall</a>`:''}
+    </div>`,'card-detail');
+}
+
+function sheetAddDeck(){
+  openSheet(`<h3>New Deck</h3><div class="tl">Adds an empty deck to the archive</div>
+    <label for="ndName">Deck name</label><input class="inp" id="ndName" placeholder="e.g. Value.deck">
+    <label for="ndCmd">Commander</label><input class="inp" id="ndCmd" placeholder="e.g. Marneus Calgar">
+    <label for="ndSub">Subtitle (optional)</label><input class="inp" id="ndSub" placeholder="e.g. Esper cEDH midrange">
+    <div class="err" id="ndErr"></div>
+    <button class="btn primary wide" id="ndSave">Create Deck</button>`);
+}
+
+function sheetAddWish(){
+  openSheet(`<h3>New Wishlist</h3><div class="tl">A list of cards you're hunting</div>
+    <label for="nwName">List name</label><input class="inp" id="nwName" placeholder="e.g. Cards to buy">
+    <label for="nwSub">Subtitle (optional)</label><input class="inp" id="nwSub" placeholder="e.g. before the con">
+    <label for="nwCover">Cover card (optional)</label>
+    <input class="inp" id="nwCover" placeholder="e.g. Korvold, Fae-Cursed King" autocapitalize="words">
+    <div class="note" style="margin-top:10px">That card's art becomes the banner for this list.
+      Leave it blank and the first card you add with art stands in.</div>
+    <div class="err" id="nwErr"></div>
+    <button class="btn primary wide" id="nwSave">Create Wishlist</button>`);
+}
+
+function sheetEditWish(id){
+  const w=findWish(id); if(!w) return;
+  openSheet(`<h3>${esc(w.name)}</h3><div class="tl">List settings</div>
+    <label for="ewName">List name</label><input class="inp" id="ewName" value="${esc(w.name)}">
+    <label for="ewSub">Subtitle</label><input class="inp" id="ewSub" value="${esc(w.sub||'')}">
+    <label for="ewCover">Cover card</label>
+    <input class="inp" id="ewCover" value="${esc(w.cover&&w.cover.name?w.cover.name:'')}"
+           placeholder="Card name — blank falls back to the first card with art" autocapitalize="words">
+    <div class="err" id="ewErr"></div>
+    <button class="btn primary wide" id="ewSave">Save</button>
+    <button class="btn wide" id="ewDel" data-arm="0" style="margin-top:10px;border-color:rgba(198,58,58,.6);color:#ff8a8a">Delete this wishlist</button>`);
+}
+
+function sheetAddCard(deckId){
+  const d=findList(deckId); if(!d) return;
+  openSheet(`<h3>Add Card</h3><div class="tl">to ${esc(d.name)}</div>
+    <label for="acName">Card name</label><input class="inp" id="acName" placeholder="e.g. Rhystic Study" autocapitalize="words">
+    <label for="acSect">Section</label>
+    <select class="inp" id="acSect">${d.sections.map(s=>`<option>${esc(s.name)}</option>`).join('')}</select>
+    <label for="acTag">Tag (optional)</label><input class="inp" id="acTag" placeholder="e.g. Engine">
+    <div class="err" id="acErr"></div>
+    <button class="btn primary wide" id="acSave">Look up &amp; add</button>`);
+}
+
+function sheetSettings(){
+  openSheet(`<h3>Settings</h3><div class="tl">Data &amp; backup</div>
+    <div class="note" style="margin-top:12px">Your edits save automatically to this device.
+      ${STORAGE_OK?'Storage is working.':'<b style="color:#ff8a8a">Storage is blocked here</b> — open the file in Safari for saving to work.'}
+      iOS can clear website data for sites you haven\\'t visited in a while, so export a backup now and then. Adding this to your Home Screen makes storage much stickier.</div>
+    <div class="btnrow">
+      <button class="btn" id="expBtn">Export backup</button>
+      <button class="btn" id="impBtn">Import backup</button>
+      <button class="btn" id="refreshBtn">Refresh prices</button>
+    </div>
+    <input type="file" id="impFile" accept="application/json" hidden>
+    <label>How to fix this</label>
+    <div class="note" style="margin-top:0">
+      <b style="color:var(--gold)">Art, prices and the signing scan need this page served over http.</b><br><br>
+      <b>Quickest — Windows</b><br>
+      1. Put <code>codex.html</code> in a folder, e.g. Downloads.<br>
+      2. Open that folder, click the address bar, type <code>cmd</code> and press Enter.<br>
+      3. Type this and press Enter — it is a command, not a link:<br>
+      <code>python -m http.server 8000</code><br>
+      4. In your browser go to <code>http://localhost:8000/codex.html</code><br>
+      5. Leave that black window open while you use the app.<br><br>
+      <b>No Python?</b> Use <code>npx serve</code> instead, or install the Live Server extension in VS Code and click "Go Live".<br><br>
+      <b>Also works:</b> anywhere with a real web address — GitHub Pages, Netlify, or any web host. Opening it in a preview pane or straight off your disk will never work.
+    </div>
+    <label>Danger zone</label>
+    <button class="btn wide" id="resetBtn" style="border-color:var(--blood);color:#ff9a9a">Reset to original data</button>
+    <div class="ok" id="setMsg"></div>`);
+}
+
+/* ==========================================================
+   7. EVENTS
+   ========================================================== */
+document.addEventListener('click',async e=>{
+  const t=e.target;
+
+  if(t.closest('#back')) return back();
+  if(t.closest('#gearBtn')) return sheetSettings();
+  if(t.closest('#closeX')) return closeSheet();
+  const artsGo=t.closest('[data-arts]');
+  if(artsGo){
+    closeSheet();
+    return go({v:'arts', subject:artsGo.dataset.arts,
+               mode:artsGo.dataset.artsMode||'card', artist:artsGo.dataset.artsArtist||'',
+               deck:artsGo.dataset.artsDeck||''});
+  }
+  const artOpen=t.closest('[data-artid]');
+  if(artOpen) return showCardObj(ART_BY_ID.get(artOpen.dataset.artid),here().deck||'');
+  const artUse=t.closest('[data-useart]');
+  if(artUse){
+    const c=ART_BY_ID.get(artUse.dataset.useart);
+    if(c) setCardArt(here().deck||'',artUse.dataset.artname,c);
+    return render();
+  }
+  if(t.closest('#artReset')){ clearCardArt(here().deck||'',here().subject); return render(); }
+  if(t.id==='modal') return closeSheet();
+  // Keep CACHE — clearing it forced a full re-fetch of cards that had already loaded,
+  // which is exactly the burst that fails. Retry should only chase what's still missing.
+  if(t.closest('#retry')){ NETGEN++; INFLIGHT.clear(); OFFLINE=false; COOLDOWN=0; LAST_NETFAIL=false; NET='idle'; banner(); return render(); }
+
+  const act=t.closest('#actBtn');
+  if(act){
+    const r=here();
+    if(r.v==='decks')  return sheetAddDeck();
+    if(r.v==='deck')   return sheetAddCard(r.id);
+    if(r.v==='wishes') return sheetAddWish();
+    if(r.v==='wish')   return sheetAddCard(r.id);
+    return;
+  }
+
+  const tb=t.closest('[data-tab]');
+  if(tb){ const v=tb.dataset.tab; if(here().v!==v) go({v},true); return; }
+  const menu=t.closest('[data-go]');   if(menu) return go({v:menu.dataset.go});
+  const drow=t.closest('[data-deck]:not(.card)'); if(drow) return go({v:'deck',id:drow.dataset.deck});
+  const wrow=t.closest('[data-wish]'); if(wrow) return go({v:'wish',id:wrow.dataset.wish});
+  if(t.closest('#wishEdit')) return sheetEditWish(here().id);
+  const mrow=t.closest('[data-move]'); if(mrow) return go({v:'move',id:mrow.dataset.move});
+  const srow=t.closest('[data-source]');
+  if(srow){ const [id,sid]=srow.dataset.source.split('|'); return go({v:'source',id,sid}); }
+
+  if(t.closest('#modeBtn')){ MODE=MODE==='art'?'full':'art'; return render(); }
+  if(t.closest('#editBtn')){ EDIT=!EDIT; return render(); }
+
+  const del=t.closest('[data-del]');
+  if(del){
+    e.stopPropagation();
+    const c=del.closest('.card');
+    const d=findList(c.dataset.deck), s=d&&d.sections.find(x=>x.name===c.dataset.sect);
+    if(s){ const i=s.cards.findIndex(x=>x.n===c.dataset.card); if(i>-1) s.cards.splice(i,1); save(); render(); }
+    return;
+  }
+
+  // must clear COOLDOWN too, or lookupOne bails instantly and this button does nothing
+  if(t.closest('#cardRetry')){ const n=sheet.querySelector('h3').textContent; OFFLINE=false; COOLDOWN=0; LAST_NETFAIL=false; CACHE.delete(key(n)); return showCard(n,SHEET_DECK); }
+  if(t.closest('#scanBtn')||t.closest('#rescanBtn')){ SCAN=null; runScan(); return vSigning(); }
+  const tick=t.closest('[data-tick]');
+  if(tick){
+    e.stopPropagation();
+    STATE.signed=STATE.signed||{};
+    const k=tick.dataset.tick;
+    STATE.signed[k]=!STATE.signed[k];
+    save(); return vSigning();
+  }
+  const ac=t.closest('#chips .chip[data-art]');
+  if(ac){
+    const was=ac.classList.contains('on');
+    document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('on'));
+    ARTFILTER = was ? '' : ac.dataset.art;
+    if(!was) ac.classList.add('on');
+    return vSigning();
+  }
+  const chip=t.closest('#chips .chip');
+  if(chip){
+    const was=chip.classList.contains('on');
+    document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('on'));
+    if(!was) chip.classList.add('on');
+    return render();
+  }
+
+  const card=t.closest('.card');
+  if(card && !EDIT){
+    const sid=card.dataset.sid;
+    if(sid && SCAN && SCAN.byId && SCAN.byId.has(sid)) return showCardObj(SCAN.byId.get(sid));
+    return showCard(card.dataset.card,card.dataset.deck||'');
+  }
+
+  /* --- sheet actions --- */
+  if(t.closest('#ndSave')){
+    const name=document.getElementById('ndName').value.trim();
+    const cmd=document.getElementById('ndCmd').value.trim();
+    const sub=document.getElementById('ndSub').value.trim();
+    const err=document.getElementById('ndErr');
+    if(!name||!cmd){ err.textContent='Deck name and commander are both required.'; return; }
+    err.textContent='Checking commander…';
+    const c=await lookupOne(cmd,5000);
+    if(!c && !LAST_NETFAIL){ err.textContent='Scryfall could not find "'+cmd+'". Check the spelling.'; return; }
+    STATE.decks.push({id:'d'+Date.now(),name,sub,commander:(c?c.name:cmd),
+      sections:[{name:'Main',note:'',cards:[]}]});
+    save(); closeSheet(); go({v:'decks'},true);
+    return;
+  }
+
+  if(t.closest('#nwSave')){
+    const name=document.getElementById('nwName').value.trim();
+    const sub=document.getElementById('nwSub').value.trim();
+    const cn=document.getElementById('nwCover').value.trim();
+    const err=document.getElementById('nwErr');
+    if(!name){ err.textContent='Give the list a name.'; return; }
+    let cover=null;
+    if(cn){
+      err.textContent='Looking up the cover card…';
+      const c=await lookupOne(cn,5000);
+      if(!c && !LAST_NETFAIL){ err.textContent='Scryfall could not find "'+cn+'". Check the spelling.'; return; }
+      if(c) cover=coverOf(c);
+      // offline: no cover rather than no list — it can be set later from List…
+    }
+    STATE.wishlists=STATE.wishlists||[];
+    STATE.wishlists.push({id:'w'+Date.now(),name,sub,cover,sections:[{name:'Wanted',note:'',cards:[]}]});
+    save(); closeSheet(); go({v:'wishes'},true);
+    return;
+  }
+
+  if(t.closest('#ewSave')){
+    const w=findWish(here().id); if(!w) return;
+    const name=document.getElementById('ewName').value.trim();
+    const err=document.getElementById('ewErr');
+    if(!name){ err.textContent='Give the list a name.'; return; }
+    const cn=document.getElementById('ewCover').value.trim();
+    if(!cn) w.cover=null;
+    else if(!w.cover || w.cover.name!==cn){       // unchanged name — don't spend a request
+      err.textContent='Looking up the cover card…';
+      const c=await lookupOne(cn,5000);
+      if(!c && !LAST_NETFAIL){ err.textContent='Scryfall could not find "'+cn+'". Check the spelling.'; return; }
+      if(c) w.cover=coverOf(c);
+      else { err.textContent='Couldn\'t reach Scryfall — the name was saved, the cover was not.'; }
+    }
+    w.name=name; w.sub=document.getElementById('ewSub').value.trim();
+    save(); closeSheet(); return render();
+  }
+
+  // two taps to delete: a list is real work to rebuild and there's no undo
+  const wdel=t.closest('#ewDel');
+  if(wdel){
+    if(wdel.dataset.arm!=='1'){ wdel.dataset.arm='1'; wdel.textContent='Tap again to delete for good'; return; }
+    const id=here().id;
+    STATE.wishlists=(STATE.wishlists||[]).filter(w=>w.id!==id);
+    if(STATE.art) delete STATE.art[id];          // its art picks go with it
+    save(); closeSheet(); return go({v:'wishes'},true);
+  }
+
+  if(t.closest('#acSave')){
+    const r=here(); const d=findList(r.id); if(!d) return;
+    const nm=document.getElementById('acName').value.trim();
+    const sect=document.getElementById('acSect').value;
+    const tag=document.getElementById('acTag').value.trim();
+    const err=document.getElementById('acErr');
+    if(!nm){ err.textContent='Enter a card name.'; return; }
+    err.textContent='Looking up…';
+    const c=await lookupOne(nm,5000);
+    if(!c && !LAST_NETFAIL){ err.textContent='Scryfall could not find "'+nm+'". Check the spelling.'; return; }
+    const s=d.sections.find(x=>x.name===sect)||d.sections[0];
+    s.cards.push({n:(c?c.name:nm),tag:tag||T.ADD});
+    save(); closeSheet(); render();
+    return;
+  }
+
+  if(t.closest('#expBtn')){
+    const blob=new Blob([JSON.stringify(STATE,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='codex-armorium-backup.json'; a.click();
+    document.getElementById('setMsg').textContent='Backup exported.';
+    return;
+  }
+  if(t.closest('#impBtn')) return document.getElementById('impFile').click();
+  if(t.closest('#refreshBtn')){ CACHE.clear(); document.getElementById('setMsg').textContent='Prices will refresh.'; closeSheet(); return render(); }
+  if(t.closest('#resetBtn')){ closeSheet(); return resetAll(); }
+});
+
+document.addEventListener('change',e=>{
+  if(e.target.id==='impFile'){
+    const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=()=>{ try{
+        const j=JSON.parse(rd.result);
+        if(!j.decks) throw 0;
+        STATE=j;                                              // backups predate both of these
+        if(!STATE.art) STATE.art={};
+        if(!Array.isArray(STATE.wishlists)) STATE.wishlists=seedWishlists();
+        migrateArt();
+        save(); closeSheet(); go({v:'home'},true);
+      }catch(err){ document.getElementById('setMsg').textContent='That file is not a valid backup.'; }
+    };
+    rd.readAsText(f);
+  }
+});
+
+document.getElementById('search').addEventListener('input',()=>render());
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
+
+/* ==========================================================
+   8. BOOT
+   ========================================================== */
+/* Installable-app support. Registration is guarded on https/localhost because a
+   service worker cannot register from file:// — and the app is still perfectly usable
+   without one, so a failure here must never be fatal. */
+if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+
+load(); banner(); render();
+(async function probe(){
+  try{
+    const r=await fetch('https://api.scryfall.com/cards/named?fuzzy=sol%20ring',{signal:sig(8000)});
+    if(!r.ok) throw 0;
+    NET='ok'; EVER_OK=true;
+  }catch(e){
+    // the probe races the first loadCards — if that already got through, this is a blip
+    if(EVER_OK){ NET='partial'; }
+    else { NET='fail'; LAST_NETFAIL=true; OFFLINE=true; }
+  }
+  banner(); REPAINT();
+})();
+</script>
+</body>
+</html>
