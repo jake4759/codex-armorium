@@ -277,6 +277,46 @@
   .tab.on .ic{border-color:var(--gold);background:var(--gold-glow)}
   .tab:active .ic{transform:scale(.9)}
 
+  /* ---------- life counter ----------
+     Takes the whole screen: at a table the phone lies flat between four people, so app
+     chrome is wasted space and the top seats need their panel upside down to read it. */
+  body.life .appbar, body.life .tabs, body.life .status, body.life .hazard{display:none}
+  body.life #main{padding:0;max-width:none}
+  body.life{overflow:hidden}
+  .lifewrap{position:fixed;inset:0;display:grid;gap:6px;padding:6px;background:#0a0708;z-index:60}
+  .seat{position:relative;border-radius:24px;display:flex;align-items:center;justify-content:center;
+        overflow:hidden;color:#12100f;min-height:0}
+  .seat.flip{transform:rotate(180deg)}
+  .seat .tot{font-family:Georgia,serif;font-size:clamp(46px,13vh,110px);line-height:1;
+             pointer-events:none;font-weight:400;letter-spacing:-.02em}
+  /* the whole half is the button — at arm's length you jab the side of the panel,
+     you do not aim for a 44px target */
+  .seat .zone{position:absolute;top:0;bottom:0;width:50%;display:flex;align-items:center;
+              padding:0 22px;font-size:30px;opacity:.42;background:none;color:inherit}
+  .seat .zone.dn{left:0;justify-content:flex-start}
+  .seat .zone.up{right:0;justify-content:flex-end}
+  .seat .zone:active{opacity:.85;background:rgba(0,0,0,.09)}
+  .seat .meta{position:absolute;top:10px;left:0;right:0;display:flex;justify-content:center;
+              gap:8px;pointer-events:none;font-size:11px;letter-spacing:.08em;opacity:.65}
+  .seat .pill{background:rgba(0,0,0,.16);border-radius:999px;padding:3px 9px;pointer-events:auto}
+  .seat.dead{filter:grayscale(1) brightness(.55)}
+  .seat .out{position:absolute;inset:auto 0 18px;text-align:center;font-size:13px;
+             letter-spacing:.22em;font-weight:700;pointer-events:none}
+  .lifehub{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:70;
+           width:62px;height:62px;border-radius:20px;background:#141011;color:var(--gold);
+           border:2px solid rgba(227,183,101,.5);font-size:22px;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  .lifemenu{position:fixed;inset:0;z-index:69;background:rgba(6,4,5,.82);display:flex;
+            align-items:center;justify-content:center}
+  .lifemenu .inner{display:grid;gap:10px;width:min(300px,80vw)}
+  /* commander damage / counters panel, opened from a seat */
+  .cmdgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin-top:10px}
+  .cmdcell{border:1px solid rgba(217,180,91,.25);border-radius:16px;padding:10px;text-align:center}
+  .cmdcell b{display:block;font-family:Georgia,serif;font-size:26px;color:var(--gold);margin:4px 0}
+  .cmdcell .who{font-size:10.5px;color:var(--muted);letter-spacing:.06em}
+  .cmdcell.lethal{border-color:var(--red)}
+  .cmdcell.lethal b{color:#ff8a8a}
+  .cmdrow{display:flex;gap:8px;justify-content:center;margin-top:4px}
+
   /* ---------- sheet ---------- */
   .modal{position:fixed;inset:0;z-index:95;display:none;background:rgba(5,3,4,.8);
          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
@@ -899,8 +939,9 @@ function render(){
              add:(findWish(r.id)?'wishes':'decks')}[r.v];
   document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===top));
   document.body.classList.toggle('editing',EDIT && (r.v==='deck'||r.v==='wish'));
+  if(r.v!=='life') document.body.classList.remove('life');
   ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,add:vAdd,
-    moves:vMoves,move:vMove,source:vSource,
+    moves:vMoves,move:vMove,source:vSource,life:vLife,
     artists:vArtists,signing:vSigning,arts:vArts}[r.v]||vHome)(r);
   scroller().scrollTop=y;
 }
@@ -924,6 +965,10 @@ function vHome(){
       <button class="mbtn" data-go="moves">
         <div class="k">The Devoured</div><h2>Removed Cards</h2>
         <p>What got stripped out of which deck, and where it went. ${movedCount} cards logged.</p>
+      </button>
+      <button class="mbtn" data-go="life">
+        <div class="k">The Table</div><h2>Life Counter</h2>
+        <p>Lay the phone flat between you. Two to six players, commander damage, poison, and it tells you who's out.</p>
       </button>
       <button class="mbtn" data-go="signing">
         <div class="k">The Royal Seal</div><h2>Signing</h2>
@@ -1293,6 +1338,118 @@ function cardTile(c,deckId,sectName){
     </div></div>`;
 }
 
+
+/* ---------- LIFE COUNTER ----------
+   Lives in STATE.game so a mis-swipe that reloads the page doesn't lose a game in
+   progress — the one piece of app state where losing it costs you an actual argument.
+
+   Seats above the midline are rotated 180°: the phone sits flat in the middle of the
+   table and the people opposite have to read their own total.
+
+   Loss is detected, never enforced. The app says a player is out; it does not remove
+   them, because Magic has enough effects that undo it and a counter that argues with
+   the table is worse than one that stays quiet. */
+const SEAT_COLORS=['#e9a7ee','#5a6cf0','#7ad6a4','#f2c14e','#ef7d7d','#63d3e0'];
+const POISON_OUT=10, CMD_OUT=21;
+
+function newGame(count,start){
+  return {count, start,
+    players:Array.from({length:count},(_,i)=>({i, life:start, poison:0, cmd:{}}))};
+}
+const GAME=()=>STATE.game;
+function lifeSave(){ save(); }
+
+function seatOut(p){
+  if(p.life<=0) return 'DEAD';
+  if(p.poison>=POISON_OUT) return 'POISONED';
+  if(Object.values(p.cmd||{}).some(v=>v>=CMD_OUT)) return 'COMMANDER';
+  return '';
+}
+
+function vLife(){
+  _repaint=()=>{};
+  const g=GAME();
+  if(!g) return vLifeSetup();
+  document.body.classList.add('life');
+  setBar('Life','',{});
+  const n=g.players.length;
+  // rows of two, odd player takes a full-width row; everything above the midline flips
+  const rows=[]; let i=0;
+  while(i<n){ const left=n-i; rows.push(left===1?[i++]:[i++,i++]); }
+  const mid=rows.length/2;
+  const alive=g.players.filter(p=>!seatOut(p));
+  const html=rows.map((row,ri)=>row.map(idx=>{
+    const p=g.players[idx], out=seatOut(p), col=SEAT_COLORS[idx%SEAT_COLORS.length];
+    return `<div class="seat${ri<mid?' flip':''}${out?' dead':''}" style="background:${col};grid-column:span ${row.length===1?2:1}">
+      <button class="zone dn" data-life="${idx}|-1">−</button>
+      <div class="tot">${p.life}</div>
+      <button class="zone up" data-life="${idx}|1">＋</button>
+      <div class="meta">
+        <button class="pill" data-seat="${idx}">P${idx+1} · CMD ${Object.values(p.cmd||{}).reduce((a,b)=>a+b,0)} · PSN ${p.poison}</button>
+      </div>
+      ${out?`<div class="out">OUT · ${out}</div>`:''}
+    </div>`;
+  }).join('')).join('');
+  document.getElementById('main').innerHTML=
+    `<div class="lifewrap" style="grid-template-columns:1fr 1fr;grid-template-rows:repeat(${rows.length},1fr)">${html}</div>
+     <button class="lifehub" id="lifeHub">☰</button>
+     ${alive.length===1&&n>1?`<div class="lifemenu" id="lifeWin"><div class="inner" style="text-align:center">
+        <div style="font-family:Georgia,serif;font-size:26px;color:var(--gold)">Player ${alive[0].i+1} wins</div>
+        <button class="btn primary wide" id="lifeAgain">Play again</button>
+        <button class="btn wide" id="lifeQuit">Leave</button></div></div>`:''}`;
+}
+
+function vLifeSetup(){
+  document.body.classList.add('life');
+  const n=(STATE.lifePrefs&&STATE.lifePrefs.count)||4;
+  const s=(STATE.lifePrefs&&STATE.lifePrefs.start)||40;
+  document.getElementById('main').innerHTML=`
+    <div class="lifewrap" style="grid-template-columns:1fr;grid-template-rows:1fr;background:var(--bg)">
+      <div style="overflow:auto;padding:26px 18px;align-self:center">
+        <div style="font-family:Georgia,serif;font-size:30px;color:var(--gold);text-align:center;margin-bottom:6px">Life Counter</div>
+        <div class="note" style="margin-bottom:18px">Lay the phone flat in the middle of the table — the far seats are drawn upside down so they read the right way round.</div>
+        <div class="sec">Players</div>
+        <div class="btnrow">${[2,3,4,5,6].map(c=>
+          `<button class="btn ${c===n?'primary':''}" data-lcount="${c}">${c}</button>`).join('')}</div>
+        <div class="sec">Starting life</div>
+        <div class="btnrow">${[20,30,40,60].map(v=>
+          `<button class="btn ${v===s?'primary':''}" data-lstart="${v}">${v}</button>`).join('')}</div>
+        <button class="btn primary wide" id="lifeStart" style="margin-top:22px">Start game</button>
+        <button class="btn wide" id="lifeQuit" style="margin-top:10px">Back to the app</button>
+      </div>
+    </div>`;
+}
+
+function sheetLifeMenu(){
+  const g=GAME();
+  openSheet(`<h3>Game</h3><div class="tl">${g?g.players.length+' players · started at '+g.start:'No game running'}</div>
+    <button class="btn primary wide" id="lifeRestart" style="margin-top:14px">Restart at ${g?g.start:40}</button>
+    <button class="btn wide" id="lifeSetup" style="margin-top:10px">Change players or life</button>
+    <button class="btn wide" id="lifeQuit" style="margin-top:10px">Leave the counter</button>`);
+}
+
+function sheetSeat(idx){
+  const g=GAME(); if(!g) return;
+  const p=g.players[idx];
+  const others=g.players.filter(x=>x.i!==idx);
+  openSheet(`<h3>Player ${idx+1}</h3>
+    <div class="tl">${p.life} life${seatOut(p)?' · OUT ('+seatOut(p)+')':''}</div>
+    <div class="sec">Poison<span>${p.poison} / ${POISON_OUT}</span></div>
+    <div class="cmdrow">
+      <button class="btn sm" data-pois="${idx}|-1">−</button>
+      <button class="btn sm" data-pois="${idx}|1">＋</button>
+    </div>
+    <div class="sec" style="margin-top:20px">Commander damage taken<span>${CMD_OUT} is lethal</span></div>
+    <div class="cmdgrid">${others.map(o=>{
+      const v=(p.cmd||{})[o.i]||0;
+      return `<div class="cmdcell${v>=CMD_OUT?' lethal':''}">
+        <div class="who">FROM P${o.i+1}</div><b>${v}</b>
+        <div class="cmdrow">
+          <button class="btn sm" data-cmd="${idx}|${o.i}|-1">−</button>
+          <button class="btn sm" data-cmd="${idx}|${o.i}|1">＋</button>
+        </div></div>`;
+    }).join('')}</div>`);
+}
 
 /* ---------- ARTISTS: the con lineup, and what you own by each ----------
    Scoped to CON_ARTISTS, not to every illustrator in your decks. 235 painters is a
@@ -2106,6 +2263,49 @@ document.addEventListener('click',async e=>{
 
   // must clear COOLDOWN too, or lookupOne bails instantly and this button does nothing
   if(t.closest('#cardRetry')){ const n=sheet.querySelector('h3').textContent; OFFLINE=false; COOLDOWN=0; LAST_NETFAIL=false; CACHE.delete(key(n)); return showCard(n,SHEET_DECK); }
+  /* --- life counter --- */
+  const lz=t.closest('[data-life]');
+  if(lz){
+    const [i,d]=lz.dataset.life.split('|').map(Number);
+    const g=GAME(); if(!g) return;
+    g.players[i].life+=d; lifeSave(); return vLife();
+  }
+  const sz=t.closest('[data-seat]');
+  if(sz){ e.stopPropagation(); return sheetSeat(Number(sz.dataset.seat)); }
+  const pz=t.closest('[data-pois]');
+  if(pz){
+    const [i,d]=pz.dataset.pois.split('|').map(Number);
+    const p=GAME().players[i]; p.poison=Math.max(0,p.poison+d);
+    lifeSave(); sheetSeat(i); return vLife();
+  }
+  const cz=t.closest('[data-cmd]');
+  if(cz){
+    const [i,from,d]=cz.dataset.cmd.split('|').map(Number);
+    const p=GAME().players[i]; p.cmd=p.cmd||{};
+    p.cmd[from]=Math.max(0,(p.cmd[from]||0)+d);
+    // commander damage is real damage — the life total has to move with it
+    if(d>0) p.life-=1; else if(p.cmd[from]>=0&&d<0) p.life+=1;
+    lifeSave(); sheetSeat(i); return vLife();
+  }
+  const lc=t.closest('[data-lcount]');
+  if(lc){ STATE.lifePrefs=Object.assign({},STATE.lifePrefs,{count:Number(lc.dataset.lcount)}); save(); return vLifeSetup(); }
+  const ls=t.closest('[data-lstart]');
+  if(ls){ STATE.lifePrefs=Object.assign({},STATE.lifePrefs,{start:Number(ls.dataset.lstart)}); save(); return vLifeSetup(); }
+  if(t.closest('#lifeStart')){
+    const pr=STATE.lifePrefs||{};
+    STATE.game=newGame(pr.count||4, pr.start||40); save(); return vLife();
+  }
+  if(t.closest('#lifeHub')) return sheetLifeMenu();
+  if(t.closest('#lifeAgain')||t.closest('#lifeRestart')){
+    const pr=STATE.lifePrefs||{};
+    STATE.game=newGame(STATE.game?STATE.game.count:(pr.count||4), STATE.game?STATE.game.start:(pr.start||40));
+    save(); closeSheet(); return vLife();
+  }
+  if(t.closest('#lifeSetup')){ STATE.game=null; save(); closeSheet(); return vLifeSetup(); }
+  if(t.closest('#lifeQuit')){
+    document.body.classList.remove('life'); closeSheet();
+    return go({v:'home'},true);
+  }
   if(t.closest('#conBtn')) return go({v:'signing'});
   if(t.closest('#scanBtn')||t.closest('#rescanBtn')){ SCAN=null; runScan(); return vSigning(); }
   const tick=t.closest('[data-tick]');
