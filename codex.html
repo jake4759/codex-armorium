@@ -1415,10 +1415,12 @@ const ART_LOADING=new Set();
    `!"..."` is Scryfall's exact-name match, so "Bolt" can't drag in "Lightning Bolt". */
 function artSpec(mode,subject,artist){
   if(mode==='artist')
-    return {key:'artist:'+subject, q:'a:"'+subject+'" game:paper', cap:6, order:'released&dir=desc'};
+    return {key:'artist:'+subject, q:'a:"'+subject+'" game:paper', cap:6,
+            order:'released&dir=desc', unique:'art'};
   const by = artist ? ' a:"'+artist+'"' : '';
   return {key:'card:'+subject+(artist?'|'+artist:''),        // filtered and unfiltered cache separately
-          q:'!"'+subject+'"'+by+' game:paper', cap:3, order:'released&dir=asc'};
+          q:'!"'+subject+'"'+by+' game:paper', cap:3,
+          order:'released&dir=asc', unique:'prints'};
 }
 
 async function loadArts(spec,onPage){
@@ -1430,7 +1432,7 @@ async function loadArts(spec,onPage){
   ART_SETS.set(spec.key,rec);
   try{
     let url='https://api.scryfall.com/cards/search?q='
-      +encodeURIComponent(spec.q)+'&unique=art&order='+spec.order;
+      +encodeURIComponent(spec.q)+'&unique='+(spec.unique||'art')+'&order='+spec.order;
     for(let page=0;page<spec.cap&&url;page++){
       const r=await fetch(url,{signal:sig(12000)});
       if(r.status===404) break;                       // no paper art under that name
@@ -1439,7 +1441,12 @@ async function loadArts(spec,onPage){
       EVER_OK=true;
       const fresh=[];
       (j.data||[]).forEach(c=>{
-        const k=c.illustration_id||c.id;
+        /* Dedupe has to match what the view is for. Browsing an artist, five reprints of
+           one painting are one thing, so they collapse by illustration. Choosing which
+           copy to own, they are five different objects: Grand Abolisher has 12 printings
+           across 6 illustrations, and collapsing them hid the etched and extended-art
+           frames outright — you could see them on Scryfall and not pick them here. */
+        const k=(spec.unique==='prints') ? c.id : (c.illustration_id||c.id);
         if(rec.seen.has(k)) return;
         rec.seen.add(k); rec.cards.push(c); ART_BY_ID.set(c.id,c); fresh.push(c);
       });
@@ -1458,10 +1465,24 @@ async function loadArts(spec,onPage){
 /* In card mode the card name is a constant, so the artist is the useful caption
    and the versions by the artist you came from get badged. In artist mode it is
    the reverse: caption the card, badge the ones you already own. */
+/* Card mode now lists printings, not paintings, so the sub-line has to carry what makes
+   two rows of the same picture different: which set, which collector number, and which
+   treatment. Without it, Commander Masters #27 and the etched #460 look identical. */
+function printLabel(c){
+  const fx=(c.frame_effects||[]).filter(f=>f!=='legendary');
+  // a foil-or-etched-only printing is worth calling out, but "etched" is often already
+  // a frame effect too and saying it twice reads like a bug
+  const fin=(c.finishes||[]).filter(f=>f!=='nonfoil');
+  if(c.finishes&&!c.finishes.includes('nonfoil')&&fin.length===1&&!fx.includes(fin[0])) fx.push(fin[0]);
+  return [c.set_name, c.collector_number?'#'+c.collector_number:'', fx.join(' · ')]
+    .filter(Boolean).join(' · ');
+}
+
 function artTile(c,mode,mark,owned,deckId){
   const src=artOf(c);
   const price=c.prices&&c.prices.usd?'$'+c.prices.usd:'';
   const caption = mode==='artist' ? (c.name||'—') : (c.artist||'—');
+  const sub = mode==='artist' ? (c.set_name||'') : printLabel(c);
   // card mode is a picker — tapping sets this deck's tile art. artist mode, and card
   // mode reached without a deck behind it, are browsers — tapping opens that printing.
   const picking = mode==='card' && !!deckId;
@@ -1478,15 +1499,16 @@ function artTile(c,mode,mark,owned,deckId){
          :`<div class="miss"><b>${esc(c.name)}</b>no art</div>`}
     ${badge}
     <div class="plate"><div style="min-width:0">
-      <div class="nm">${esc(caption)}</div><div class="tg">${esc(c.set_name||'')}</div>
+      <div class="nm">${esc(caption)}</div><div class="tg">${esc(sub)}</div>
     </div>${price?`<div class="pz">${price}</div>`:''}</div>
   </button>`;
 }
 
-function artStatus(rec){
+function artStatus(rec,mode){
   if(!rec) return 'Summoning…';
   if(rec.failed&&!rec.cards.length) return 'Could not reach Scryfall.';
-  return rec.cards.length+' artwork'+(rec.cards.length===1?'':'s')
+  const noun=mode==='card'?'printing':'artwork';   // card mode lists every copy, not every painting
+  return rec.cards.length+' '+noun+(rec.cards.length===1?'':'s')
     +(rec.done?(rec.truncated?' (capped)':''):' so far…');
 }
 
@@ -1517,7 +1539,7 @@ function vArts(r){
     <div class="totalbar">
       <div><div class="l">${mode==='artist'?'Illustrated by':byArtist?esc(byArtist)+'’s printings of':'Every artwork of'}</div>
            <div class="v" style="font-size:22px">${esc(subject)}</div></div>
-      <div style="text-align:right"><div class="l" id="artcount">${esc(artStatus(rec))}</div></div>
+      <div style="text-align:right"><div class="l" id="artcount">${esc(artStatus(rec,mode))}</div></div>
     </div>
     ${mode==='card'?`<div class="note">${deck
         ? `Tap any artwork to use it on this card's tiles in <b style="color:var(--gold)">${esc(deck.name)}</b>. Other decks keep their own.`
@@ -1537,7 +1559,7 @@ function vArts(r){
       if(!still()) return;
       const grid=document.getElementById('artgrid');
       const count=document.getElementById('artcount');
-      if(count) count.textContent=artStatus(ART_SETS.get(spec.key));
+      if(count) count.textContent=artStatus(ART_SETS.get(spec.key),mode);
       if(!grid) return;
       if(document.getElementById('search').value.trim()) return;  // filtered — let the redraw handle it
       const spin=grid.parentNode.querySelector('.empty'); if(spin) spin.remove();
