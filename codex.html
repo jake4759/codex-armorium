@@ -170,6 +170,10 @@
     display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-weight:400;
   }
   .sec span{font-size:12px;color:var(--muted);font-family:inherit}
+  /* artist headings in Signing double as a way into that illustrator's full body of work */
+  .secbtn{width:100%;text-align:left;background:none;border:0}
+  .secbtn span{color:var(--gold);opacity:.8}
+  .secbtn:active{opacity:.6}
   .note{font-size:13.5px;color:var(--muted);line-height:1.65;margin:0 0 14px;
         background:var(--surface);border-left:3px solid var(--gold);border-radius:0 14px 14px 0;padding:12px 14px}
   .totalbar{
@@ -202,6 +206,12 @@
   .grid.full .card .pricetag{position:absolute;left:0;bottom:0;background:rgba(13,10,11,.9);color:var(--green);
     font-size:11px;padding:4px 9px;border-top-right-radius:12px;font-weight:600}
   .grid.art .card .pricetag{display:none}
+  /* add-card search hits: the whole card, the way you recognise it on a shelf — but the
+     name plate stays, unlike .grid.full, because a search result has to be readable
+     before the image loads */
+  .grid.addgrid .card img{width:100%;aspect-ratio:488/680;object-fit:cover;display:block;background:var(--surface3)}
+  .grid.addgrid .card .miss{aspect-ratio:488/680}
+  .card.inlist{border-color:var(--green)}
   .badge{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;font-size:9.5px;
     letter-spacing:.06em;padding:4px 9px;text-transform:uppercase;z-index:3;border-radius:9px;font-weight:600}
   .badge.cmd{background:var(--gold);color:var(--bg)}
@@ -823,6 +833,7 @@ function setBar(title,sub,opts={}){
   const act=document.getElementById('actBtn');
   act.hidden=!opts.action; if(opts.action) act.textContent=opts.action;
   document.body.classList.toggle('tools',!!opts.tools);
+  document.getElementById('search').placeholder=opts.placeholder||'Filter cards…';
   if(!opts.tools){ document.getElementById('search').value=''; document.getElementById('chips').innerHTML=''; }
 }
 
@@ -832,10 +843,11 @@ function render(){
   const y=scroller().scrollTop;
   const r=here();
   const top={home:'home',decks:'decks',deck:'decks',wishes:'wishes',wish:'wishes',
-             moves:'moves',move:'moves',source:'moves',signing:'signing',arts:'signing'}[r.v];
+             moves:'moves',move:'moves',source:'moves',signing:'signing',arts:'signing',
+             add:(findWish(r.id)?'wishes':'decks')}[r.v];
   document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===top));
   document.body.classList.toggle('editing',EDIT && (r.v==='deck'||r.v==='wish'));
-  ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,
+  ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,add:vAdd,
     moves:vMoves,move:vMove,source:vSource,signing:vSigning,arts:vArts}[r.v]||vHome)(r);
   scroller().scrollTop=y;
 }
@@ -1031,6 +1043,97 @@ function vWish(r){
   loadCards(allNames);
 }
 
+/* ---------- ADD A CARD: search Scryfall by name, pick from the art ----------
+   Typing an exact name into a box and hoping is a bad deal in a game where you recognise
+   cards by their picture. This searches as you type and shows the cards, so "rhystic"
+   gives you every Rhystic card and adding "study" narrows it to two.
+
+   Each word becomes its own `name:` clause, ANDed — that is what makes the list narrow
+   rather than jump around, and it means word order doesn't matter. `unique=cards` keeps
+   one tile per card instead of one per printing: you are choosing a *card* here, and the
+   art picker is a separate, later decision. */
+let ADD_TIMER=null, ADD_ABORT=null, ADD_Q='', ADD_HITS=[], ADD_STATE='idle';
+
+async function runAddSearch(term){
+  const q=(term||'').trim();
+  ADD_Q=q;
+  if(ADD_ABORT){ ADD_ABORT.abort(); ADD_ABORT=null; }
+  if(q.length<2){ ADD_STATE='idle'; ADD_HITS=[]; if(here().v==='add') vAdd(here()); return; }
+  ADD_STATE='busy'; if(here().v==='add') vAdd(here());
+  const ctl=new AbortController(); ADD_ABORT=ctl;
+  const query=q.split(/\s+/).map(w=>'name:'+JSON.stringify(w)).join(' ');
+  try{
+    const r=await fetch('https://api.scryfall.com/cards/search?unique=cards&order=name&q='+encodeURIComponent(query),
+                        {signal:ctl.signal});
+    if(ADD_Q!==q) return;                       // a later keystroke already owns the view
+    if(r.status===404){ ADD_HITS=[]; ADD_STATE='none'; }   // Scryfall's "no matches"
+    else if(!r.ok){ ADD_STATE='err'; }
+    else{
+      const j=await r.json();
+      if(ADD_Q!==q) return;
+      EVER_OK=true;
+      ADD_HITS=(j.data||[]).slice(0,60);
+      ADD_HITS.forEach(c=>CACHE.set(key(c.name),c));   // pricing and art, already paid for
+      ADD_STATE='ok';
+    }
+  }catch(e){
+    if(e.name==='AbortError'||ADD_Q!==q) return;
+    ADD_STATE='err';
+  }
+  if(here().v==='add') vAdd(here());
+}
+
+function vAdd(r){
+  _repaint=()=>{ if(here().v==='add') vAdd(here()); };
+  const list=findList(r.id); if(!list) return back();
+  const sects=list.sections;
+  const target=sects.find(s=>s.name===r.sect)||sects[0];
+  setBar('Add to '+list.name, sects.length>1?'Into '+target.name:'Search Scryfall by name',
+         {tools:true, placeholder:'Search cards…'});
+
+  // section picker only earns its space when there is a choice to make
+  const chipbar=document.getElementById('chips');
+  const want='add:'+r.id+':'+target.name;
+  if(chipbar.dataset.for!==want){
+    chipbar.innerHTML=sects.length>1
+      ? sects.map(s=>`<button class="chip${s.name===target.name?' on':''}" data-addsect="${esc(s.name)}">${esc(s.name)}</button>`).join('')
+      : '';
+    chipbar.dataset.for=want;
+  }
+
+  const counts={};
+  sects.forEach(s=>s.cards.forEach(c=>{ const k=key(c.n); counts[k]=(counts[k]||0)+1; }));
+
+  const tile=c=>{
+    const n=counts[key(c.name)]||0, src=fullOf(c);
+    const p=c.prices&&c.prices.usd?'$'+c.prices.usd:'';
+    return `<button class="card${n?' inlist':''}" data-addcard="${esc(c.name)}">
+      ${n?`<div class="badge cmd">${n} in list</div>`:''}
+      ${src?`<img loading="lazy" decoding="async" src="${src}" alt="${esc(c.name)}">`
+           :`<div class="miss"><b>${esc(c.name)}</b>no image</div>`}
+      <div class="plate"><div style="min-width:0">
+        <div class="nm">${esc(c.name)}</div><div class="tg">${esc(c.type_line||'')}</div>
+      </div>${p?`<div class="pz">${p}</div>`:''}</div>
+    </button>`;
+  };
+
+  const body =
+    ADD_STATE==='busy' ? '<div class="empty"><span class="spin"></span>Searching…</div>'
+  : ADD_STATE==='err'  ? `<div class="empty">Couldn't reach Scryfall.<br>Check your connection, then keep typing.
+                          <br><br><button class="btn sm" id="addByName">Add by exact name instead</button></div>`
+  : ADD_STATE==='none' ? `<div class="empty">No card's name contains that.
+                          <br><br><button class="btn sm" id="addByName">Add by exact name instead</button></div>`
+  : ADD_STATE==='ok'   ? `<div class="grid addgrid">${ADD_HITS.map(tile).join('')}</div>
+                          ${ADD_HITS.length>=60?'<div class="note">Showing the first 60 — type more to narrow it.</div>':''}`
+  : `<div class="empty">Start typing a card name.<br>Two letters is enough.
+     <br><br><button class="btn sm" id="addByName">Add by exact name instead</button></div>`;
+
+  document.getElementById('main').innerHTML=`
+    <div class="note">Tap a card to add it to <b style="color:var(--gold)">${esc(list.name)}</b>${
+      sects.length>1?` · <b style="color:var(--gold)">${esc(target.name)}</b>`:''}. It stays open, so you can add several.</div>
+    ${body}`;
+}
+
 function cardTile(c,deckId,sectName){
   const src=tileArt(c.n,deckId);          // honours this deck's chosen printing, else the default
   const p=priceOf(c.n);
@@ -1049,18 +1152,20 @@ function cardTile(c,deckId,sectName){
 }
 
 
-/* ---------- SIGNING: scan every deck + wishlist against the con lineup ---------- */
+/* ---------- SIGNING: scan the cards you own against the con lineup ---------- */
 let SCAN=null, SCANNING=false, SCANMSG='', ARTFILTER='';
 
-/* The scan reads the live wishlists, not the frozen WISHLIST const it used to — adding a
-   card to a list has to put it in front of the con artists too, or the list is a lie. */
 function allWishNames(){
   const s=new Set();
   (STATE.wishlists||[]).forEach(w=>w.sections.forEach(sec=>sec.cards.forEach(c=>s.add(c.n))));
   return [...s];
 }
+/* Cards you actually hold — decks only. The scan used to fold the wishlist in on the
+   theory that you could buy a card at the con and get it signed the same day, but that
+   put artists in the queue list for cards not in the binder. "Owned" now means owned,
+   which is also what the arts view's Owned badge should have meant all along. */
 function allOwnedNames(){
-  const s=new Set(allWishNames());
+  const s=new Set();
   STATE.decks.forEach(d=>d.sections.forEach(sec=>sec.cards.forEach(c=>s.add(c.n))));
   return [...s];
 }
@@ -1069,6 +1174,18 @@ function decksWith(name){
 }
 function wishesWith(name){
   return (STATE.wishlists||[]).filter(w=>w.sections.some(s=>s.cards.some(c=>c.n===name))).map(w=>w.name);
+}
+const onWish=(w,name)=>w.sections.some(s=>s.cards.some(c=>c.n===name));
+/* Browsing an artist's back catalogue is where you find things you want, so the card
+   sheet has to be able to put them on a list from there. Toggles rather than adds: the
+   same button is how you take it off again when you've bought it. */
+function toggleWish(listId,name){
+  const w=findWish(listId); if(!w) return;
+  if(onWish(w,name)) w.sections.forEach(s=>{
+    const i=s.cards.findIndex(c=>c.n===name); if(i>-1) s.cards.splice(i,1);
+  });
+  else (w.sections[0]||(w.sections[0]={name:'Wanted',note:'',cards:[]})).cards.push({n:name,tag:''});
+  save();
 }
 function byConArtist(a){
   if(!a) return null;
@@ -1140,9 +1257,10 @@ function vSigning(){
     return;
   }
   if(!SCAN){
-    m.innerHTML=`<div class="note">Checks every card across your ${STATE.decks.length} decks plus the ${allWishNames().length}-card wishlist
+    m.innerHTML=`<div class="note">Checks every card across your ${STATE.decks.length} decks
       against the ${CON_ARTISTS.length} artists at the con, and returns every printing they illustrated —
-      all arts, not just the one you own.</div>
+      all arts, not just the one you own. Wishlist cards are not scanned: you can't get a card
+      signed until it's in the binder.</div>
       <button class="btn primary wide" id="scanBtn">Run the scan</button>
       <div class="sec">Artists at the con<span>${CON_ARTISTS.length}</span></div>
       <div class="note">${CON_ARTISTS.map(esc).join(' · ')}</div>`;
@@ -1164,20 +1282,17 @@ function vSigning(){
         <button class="btn sm" id="rescanBtn">Rescan</button></div></div></div>`;
   if(SCAN.failed) html+=`<div class="note">${SCAN.failed} batch(es) failed — tap Rescan if the list looks short.</div>`;
 
-  const wishSet=new Set(allWishNames());   // one pass, not a linear scan per tile
   arts.forEach(a=>{
     if(ARTFILTER && a!==ARTFILTER) return;
     let list=SCAN.groups[a];
     if(q) list=list.filter(c=>c.name.toLowerCase().includes(q));
     if(!list.length) return;
-    html+=`<div class="sec">${esc(a)}<span>${list.length} printings</span></div><div class="grid art">`;
+    html+=`<button class="sec secbtn" data-artistgo="${esc(a)}">${esc(a)}<span>${list.length} of yours · all their cards ›</span></button><div class="grid art">`;
     list.forEach(c=>{
       const art=artOf(c), p=c.prices&&c.prices.usd?Number(c.prices.usd):null;
       const inDecks=decksWith(c.name);
-      const isWish=wishSet.has(c.name);
       const k=c.id, on=(STATE.signed||{})[k];
       html+=`<div class="card${on?' got':''}" data-card="${esc(c.name)}" data-sid="${esc(k)}">
-        ${isWish?'<div class="badge cmd">Wishlist</div>':''}
         ${on?'<div class="badge combo">Signed</div>':''}
         ${art?`<img loading="lazy" src="${art}" alt="${esc(c.name)}">`:`<div class="miss"><b>${esc(c.name)}</b></div>`}
         <div class="plate"><div style="min-width:0">
@@ -1456,6 +1571,30 @@ function artsBar(c,deckId){
   return `<div class="artsbar">${byArtist}${ofCard}</div>`;
 }
 
+/* Sits under the arts buttons on a card sheet. Reads its state from the lists rather than
+   from a flag, so it says where the card already is instead of just "Add". */
+function wishBar(c){
+  if(!c||!c.name) return '';
+  const on=wishesWith(c.name);
+  return `<div class="artsbar"><button class="artsbtn" data-wishadd="${esc(c.name)}"
+    ${on.length?'style="border-color:var(--green);color:var(--green)"':''}
+    >${on.length?'✓ On '+esc(on.join(', ')):'＋ Add to wishlist'}</button></div>`;
+}
+
+function sheetWishPick(name){
+  const ws=STATE.wishlists||[];
+  if(!ws.length) return openSheet(`<h3>No wishlists yet</h3>
+    <div class="tl">${esc(name)}</div>
+    <div class="ot">Make a list first — the Wishlist tab, then ＋.</div>`);
+  openSheet(`<h3>${esc(name)}</h3><div class="tl">Tap a list to add or remove</div>
+    ${ws.map(w=>{
+      const has=onWish(w,name);
+      return `<button class="btn wide" data-wishput="${esc(w.id)}" style="margin-top:10px;text-align:left${
+        has?';border-color:var(--green);color:var(--green)':''}">
+        ${has?'✓ ':'＋ '}${esc(w.name)} <span style="color:var(--muted);font-size:12px">· ${wishNames(w).length} cards</span></button>`;
+    }).join('')}`);
+}
+
 function showCardObj(c,deckId){
   if(!c) return;
   const faces=(c.card_faces&&c.card_faces[0].image_uris)?c.card_faces:[c];
@@ -1463,7 +1602,7 @@ function showCardObj(c,deckId){
   const txt=faces.map(f=>`<b style="color:var(--gold)">${esc(f.name)}${f.mana_cost?' '+esc(f.mana_cost):''}</b>\n${esc(f.type_line||'')}\n\n${esc(f.oracle_text||'')}${f.power?`\n\n${f.power}/${f.toughness}`:''}${f.loyalty?`\n\nLoyalty ${f.loyalty}`:''}`).join('\n\n──────────\n\n');
   const p=c.prices||{};
   const inDecks=decksWith(c.name), onWish=wishesWith(c.name);
-  const artsBtn=artsBar(c,deckId);
+  const artsBtn=artsBar(c,deckId)+wishBar(c);
   openSheet(`<div>${imgs}${artsBtn}</div><div>
       <h3>${esc(c.name)}</h3>
       <div class="tl">${esc(c.set_name||'')} · #${esc(c.collector_number||'')}</div>
@@ -1530,7 +1669,7 @@ async function showCard(name,deckId){
     : faces.map(f=>`<img src="${f.image_uris?.normal||fullOf(c)}" alt="${esc(c.name)}">`).join('');
   const txt=faces.map(f=>`<b style="color:var(--gold)">${esc(f.name)}${f.mana_cost?' '+esc(f.mana_cost):''}</b>\n${esc(f.type_line||'')}\n\n${esc(f.oracle_text||'')}${f.power?`\n\n${f.power}/${f.toughness}`:''}${f.loyalty?`\n\nLoyalty ${f.loyalty}`:''}`).join('\n\n──────────\n\n');
   const p=c.prices||{};
-  const artsBtn=artsBar(c,deckId);
+  const artsBtn=artsBar(c,deckId)+wishBar(c);
   openSheet(`<div>${imgs}${artsBtn}</div><div>
       <h3>${esc(c.name)}</h3><div class="tl">${esc(c.type_line||'')}</div>
       <div class="l mono" style="font-size:10px;letter-spacing:.15em;color:var(--bone-dim);text-transform:uppercase">TCGplayer market</div>
@@ -1655,9 +1794,13 @@ document.addEventListener('click',async e=>{
   if(act){
     const r=here();
     if(r.v==='decks')  return sheetAddDeck();
-    if(r.v==='deck')   return sheetAddCard(r.id);
     if(r.v==='wishes') return sheetAddWish();
-    if(r.v==='wish')   return sheetAddCard(r.id);
+    if(r.v==='deck'||r.v==='wish'){
+      // the box is about to mean "search Scryfall", not "filter this list"
+      document.getElementById('search').value='';
+      ADD_Q=''; ADD_HITS=[]; ADD_STATE='idle';
+      return go({v:'add',id:r.id});
+    }
     return;
   }
 
@@ -1667,6 +1810,29 @@ document.addEventListener('click',async e=>{
   const drow=t.closest('[data-deck]:not(.card)'); if(drow) return go({v:'deck',id:drow.dataset.deck});
   const wrow=t.closest('[data-wish]'); if(wrow) return go({v:'wish',id:wrow.dataset.wish});
   if(t.closest('#wishEdit')) return sheetEditWish(here().id);
+  // artist heading in Signing -> that illustrator's whole body of work
+  const ago=t.closest('[data-artistgo]');
+  if(ago) return go({v:'arts',subject:ago.dataset.artistgo,mode:'artist',artist:ago.dataset.artistgo,deck:''});
+  const wadd=t.closest('[data-wishadd]'); if(wadd) return sheetWishPick(wadd.dataset.wishadd);
+  /* --- add-card search --- */
+  const asect=t.closest('[data-addsect]');
+  if(asect){ here().sect=asect.dataset.addsect; return vAdd(here()); }
+  const addc=t.closest('[data-addcard]');
+  if(addc){
+    const r=here(), list=findList(r.id); if(!list) return;
+    const sect=list.sections.find(s=>s.name===r.sect)||list.sections[0];
+    // a wishlist is a list of wants, not a changelog — the "Added" tag only means
+    // something in a deck, where it marks what wasn't in the original build
+    sect.cards.push({n:addc.dataset.addcard, tag:findWish(r.id)?'':T.ADD});
+    save(); return vAdd(r);
+  }
+  if(t.closest('#addByName')) return sheetAddCard(here().id);
+  const wput=t.closest('[data-wishput]');
+  if(wput){
+    const name=sheet.querySelector('h3').textContent;
+    toggleWish(wput.dataset.wishput,name);
+    return sheetWishPick(name);            // stay open — adding to several lists is one trip
+  }
   const mrow=t.closest('[data-move]'); if(mrow) return go({v:'move',id:mrow.dataset.move});
   const srow=t.closest('[data-source]');
   if(srow){ const [id,sid]=srow.dataset.source.split('|'); return go({v:'source',id,sid}); }
@@ -1827,7 +1993,18 @@ document.addEventListener('change',e=>{
   }
 });
 
-document.getElementById('search').addEventListener('input',()=>render());
+/* Everywhere else the box filters what is already on screen, which is instant. In the add
+   view it queries Scryfall, so it waits for a pause in typing — otherwise "rhystic study"
+   fires twelve requests and the answers land out of order. */
+document.getElementById('search').addEventListener('input',()=>{
+  if(here().v==='add'){
+    clearTimeout(ADD_TIMER);
+    const v=document.getElementById('search').value;
+    ADD_TIMER=setTimeout(()=>runAddSearch(v),280);
+    return;
+  }
+  render();
+});
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
 
 /* ==========================================================
