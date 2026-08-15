@@ -212,6 +212,28 @@
   .grid.addgrid .card img{width:100%;aspect-ratio:488/680;object-fit:cover;display:block;background:var(--surface3)}
   .grid.addgrid .card .miss{aspect-ratio:488/680}
   .card.inlist{border-color:var(--green)}
+
+  /* ---------- add panel ---------- */
+  .pickrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+           padding:11px 0;border-bottom:1px solid rgba(217,180,91,.12)}
+  .pickl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+  .stepper{display:flex;align-items:center;gap:12px}
+  .stepper b{font-family:Georgia,serif;font-size:20px;color:var(--gold);min-width:22px;text-align:center}
+  .seg{display:flex;border:1px solid rgba(217,180,91,.3);border-radius:12px;overflow:hidden}
+  .segb{padding:7px 15px;font-size:12.5px;color:var(--muted);background:none}
+  .segb.on{background:var(--gold);color:#1a1311;font-weight:600}
+  .segb:disabled{opacity:.3}
+  .pickinp{width:auto;margin:0;padding:7px 10px;font-size:13px}
+  /* printings scroll sideways: a card can have thirty, and they must not push the
+     Add button off the bottom of the sheet */
+  .printstrip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+  .pchip{flex:0 0 108px;border:1px solid rgba(217,180,91,.2);border-radius:14px;overflow:hidden;
+         background:var(--surface);padding:0;text-align:left}
+  .pchip.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+  .pchip img{width:100%;aspect-ratio:626/457;object-fit:cover;display:block;background:var(--surface3)}
+  .pchip i{display:block;aspect-ratio:626/457;background:var(--surface3)}
+  .pchip span{display:block;padding:6px 8px;font-size:9.5px;line-height:1.3;color:var(--muted)}
+  .pchip.on span{color:var(--gold)}
   .badge{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;font-size:9.5px;
     letter-spacing:.06em;padding:4px 9px;text-transform:uppercase;z-index:3;border-radius:9px;font-weight:600}
   .badge.cmd{background:var(--gold);color:var(--bg)}
@@ -776,6 +798,30 @@ function priceOf(name){
   return p?Number(p):null;
 }
 const money=v=>v==null?'—':'$'+v.toFixed(2);
+/* Entries carry qty/foil since the add panel writes them, so totals count copies rather
+   than rows and price a foil as a foil. Entries from before the panel existed have
+   neither field, hence the defaults — an absent qty is one copy, not zero. */
+const entryQty=e=>Math.max(1,Number(e&&e.qty)||1);
+/* Prefer the printing the entry actually is. CACHE is keyed by name and holds Scryfall's
+   default printing, so a foil-only Commander's Arsenal copy priced off that comes back
+   empty. ART_BY_ID has the real one whenever it's been loaded this session; after a cold
+   start it hasn't, and falling back to the name is better than showing nothing. */
+function entryPrice(e){
+  const c=(e.pid&&ART_BY_ID.get(e.pid))||CACHE.get(key(e.n));
+  if(!c||!c.prices) return null;
+  const p=e.foil ? (c.prices.usd_foil||c.prices.usd_etched)
+                 : (c.prices.usd||c.prices.usd_foil||c.prices.usd_etched);
+  return p?Number(p):null;
+}
+function totalOfEntries(entries){
+  let sum=0,known=0,unknown=0;
+  entries.forEach(e=>{ const q=entryQty(e), p=entryPrice(e);
+    if(p==null) unknown+=q; else { sum+=p*q; known+=q; } });
+  return {sum,known,unknown};
+}
+const listEntries=l=>l.sections.flatMap(s=>s.cards);
+const countEntries=l=>listEntries(l).reduce((n,e)=>n+entryQty(e),0);
+
 function totalOf(names){
   let sum=0,known=0,unknown=0;
   names.forEach(n=>{const p=priceOf(n); if(p==null)unknown++; else{sum+=p;known++;}});
@@ -833,8 +879,13 @@ function setBar(title,sub,opts={}){
   const act=document.getElementById('actBtn');
   act.hidden=!opts.action; if(opts.action) act.textContent=opts.action;
   document.body.classList.toggle('tools',!!opts.tools);
-  document.getElementById('search').placeholder=opts.placeholder||'Filter cards…';
-  if(!opts.tools){ document.getElementById('search').value=''; document.getElementById('chips').innerHTML=''; }
+  const box=document.getElementById('search');
+  box.placeholder=opts.placeholder||'Filter cards…';
+  /* The box belongs to one view at a time, the way the chip bar does. Without an owner it
+     carried text across: searching "sol ring" to add a card, then going back to the list,
+     left the list filtered to nothing by a query meant for Scryfall. */
+  if(!opts.tools){ box.value=''; box.dataset.for=''; document.getElementById('chips').innerHTML=''; }
+  else if(box.dataset.for!==(opts.searchFor||'')){ box.value=''; box.dataset.for=opts.searchFor||''; }
 }
 
 function render(){
@@ -882,10 +933,10 @@ function vHome(){
   loadCards(STATE.decks.map(d=>d.commander));
 }
 function statTiles(){
-  const all=STATE.decks.flatMap(d=>d.sections.flatMap(s=>s.cards.map(c=>c.n)));
-  const t=totalOf(all);
+  const all=STATE.decks.flatMap(listEntries);
+  const t=totalOfEntries(all);
   return `<div class="stat"><b>${STATE.decks.length}</b><span>Decks</span></div>
-    <div class="stat"><b>${all.length}</b><span>Cards</span></div>
+    <div class="stat"><b>${all.reduce((n,e)=>n+entryQty(e),0)}</b><span>Cards</span></div>
     <div class="stat"><b>${t.known?money(t.sum):'—'}</b><span>Market</span></div>`;
 }
 function paintHomeStats(){
@@ -899,13 +950,12 @@ function vDecks(){
   setBar('Decks',STATE.decks.length+' in archive',{action:'＋'});
   document.getElementById('main').innerHTML=`<div class="rows">${
     STATE.decks.map(d=>{
-      const names=d.sections.flatMap(s=>s.cards.map(c=>c.n));
-      const t=totalOf(names); const art=artOf(CACHE.get(key(d.commander)));
+      const t=totalOfEntries(listEntries(d)); const art=artOf(CACHE.get(key(d.commander)));
       return `<button class="lrow" data-deck="${esc(d.id)}">
         <div class="por" style="${art?`background-image:url('${art}')`:''}"></div>
         <div class="body">
           <h3>${esc(d.name)}</h3>
-          <div class="m">${esc(d.commander)} · ${names.length} cards</div>
+          <div class="m">${esc(d.commander)} · ${countEntries(d)} cards</div>
           <div class="val">${t.known?money(t.sum):'—'}${t.unknown?` <span style="color:var(--bone-dim)">(${t.unknown} unpriced)</span>`:''}</div>
         </div><div class="chev">›</div></button>`;
     }).join('')}</div>
@@ -918,7 +968,7 @@ function vDeck(r){
   _repaint=()=>{ if(here().v==='deck') vDeck(here()); };
   const d=findDeck(r.id); if(!d) return back();
   const allNames=d.sections.flatMap(s=>s.cards.map(c=>c.n));
-  setBar(d.name,d.sub||d.commander,{tools:true,action:'＋'});
+  setBar(d.name,d.sub||d.commander,{tools:true,action:'＋',searchFor:'deck:'+d.id});
 
   // chips
   const tags=[...new Set(d.sections.flatMap(s=>s.cards.map(c=>c.tag)).filter(Boolean))].sort();
@@ -929,7 +979,7 @@ function vDeck(r){
   }
   const active=chipbar.querySelector('.chip.on')?.dataset.tag||'';
   const q=document.getElementById('search').value.toLowerCase().trim();
-  const t=totalOf(allNames);
+  const t=totalOfEntries(listEntries(d));
 
   let shown=0;
   const body=d.sections.map(s=>{
@@ -938,8 +988,8 @@ function vDeck(r){
     if(active) cards=cards.filter(c=>c.tag===active);
     if(!cards.length) return '';
     shown+=cards.length;
-    const st=totalOf(cards.map(c=>c.n));
-    return `<div class="sec">${esc(s.name)}<span>${cards.length} cards · ${st.known?money(st.sum):'—'}</span></div>
+    const st=totalOfEntries(cards);
+    return `<div class="sec">${esc(s.name)}<span>${cards.reduce((n,e)=>n+entryQty(e),0)} cards · ${st.known?money(st.sum):'—'}</span></div>
       ${s.note&&!q&&!active?`<div class="note">${esc(s.note)}</div>`:''}
       <div class="grid ${MODE}">${cards.map(c=>cardTile(c,d.id,s.name)).join('')}</div>`;
   }).join('');
@@ -948,7 +998,7 @@ function vDeck(r){
     <div class="totalbar">
       <div><div class="l">Market Value · TCGplayer</div><div class="v">${t.known?money(t.sum):'—'}</div></div>
       <div style="text-align:right">
-        <div class="l">${allNames.length} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
+        <div class="l">${countEntries(d)} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
         <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
           <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
           <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
@@ -976,20 +1026,22 @@ function vWishes(){
   _repaint=()=>{ if(here().v==='wishes') vWishes(); };
   const ws=STATE.wishlists||[];
   setBar('Wishlist',ws.length+(ws.length===1?' list':' lists'),{action:'＋'});
-  const all=allWishNames(), grand=totalOf(all);
+  const all=allWishNames();
+  const grand=totalOfEntries(ws.flatMap(listEntries));
+  const grandCount=ws.reduce((n,w)=>n+countEntries(w),0);
   document.getElementById('main').innerHTML=`
     <div class="totalbar">
       <div><div class="l">Wanted · TCGplayer</div><div class="v">${grand.known?money(grand.sum):'—'}</div></div>
-      <div style="text-align:right"><div class="l">${all.length} card${all.length===1?'':'s'}${grand.unknown?` · ${grand.unknown} unpriced`:''}</div></div>
+      <div style="text-align:right"><div class="l">${grandCount} card${grandCount===1?'':'s'}${grand.unknown?` · ${grand.unknown} unpriced`:''}</div></div>
     </div>
     <div class="rows">${ws.map(w=>{
-      const names=wishNames(w), t=totalOf(names), cov=wishCover(w);
+      const t=totalOfEntries(listEntries(w)), cov=wishCover(w);
       return `<button class="lrow banner" data-wish="${esc(w.id)}">
         <div class="por" style="${cov?`background-image:url('${cov}')`:''}"></div>
         <div class="body">
           <div class="bl">
             <h3>${esc(w.name)}</h3>
-            <div class="m">${names.length} card${names.length===1?'':'s'}${w.sub?' · '+esc(w.sub):''}</div>
+            <div class="m">${countEntries(w)} card${countEntries(w)===1?'':'s'}${w.sub?' · '+esc(w.sub):''}</div>
           </div>
           <div class="br">
             <div class="val">${t.known?money(t.sum):'—'}</div>
@@ -1004,8 +1056,8 @@ function vWishes(){
 function vWish(r){
   _repaint=()=>{ if(here().v==='wish') vWish(here()); };
   const w=findWish(r.id); if(!w) return back();
-  const allNames=wishNames(w);
-  setBar(w.name,w.sub||`${allNames.length} card${allNames.length===1?'':'s'} wanted`,{tools:true,action:'＋'});
+  const allNames=wishNames(w), nCards=countEntries(w);
+  setBar(w.name,w.sub||`${nCards} card${nCards===1?'':'s'} wanted`,{tools:true,action:'＋',searchFor:'wish:'+w.id});
 
   const tags=[...new Set(w.sections.flatMap(s=>s.cards.map(c=>c.tag)).filter(Boolean))].sort();
   const chipbar=document.getElementById('chips');
@@ -1015,15 +1067,15 @@ function vWish(r){
   }
   const active=chipbar.querySelector('.chip.on')?.dataset.tag||'';
   const q=document.getElementById('search').value.toLowerCase().trim();
-  const t=totalOf(allNames);
+  const t=totalOfEntries(listEntries(w));
 
   const body=w.sections.map(s=>{
     let cards=s.cards;
     if(q) cards=cards.filter(c=>c.n.toLowerCase().includes(q));
     if(active) cards=cards.filter(c=>c.tag===active);
     if(!cards.length) return '';
-    const st=totalOf(cards.map(c=>c.n));
-    return `<div class="sec">${esc(s.name)}<span>${cards.length} cards · ${st.known?money(st.sum):'—'}</span></div>
+    const st=totalOfEntries(cards);
+    return `<div class="sec">${esc(s.name)}<span>${cards.reduce((n,e)=>n+entryQty(e),0)} cards · ${st.known?money(st.sum):'—'}</span></div>
       ${s.note&&!q&&!active?`<div class="note">${esc(s.note)}</div>`:''}
       <div class="grid ${MODE}">${cards.map(c=>cardTile(c,w.id,s.name)).join('')}</div>`;
   }).join('');
@@ -1032,7 +1084,7 @@ function vWish(r){
     <div class="totalbar">
       <div><div class="l">To Buy · TCGplayer</div><div class="v">${t.known?money(t.sum):'—'}</div></div>
       <div style="text-align:right">
-        <div class="l">${allNames.length} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
+        <div class="l">${nCards} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
         <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
           <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
           <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
@@ -1043,6 +1095,90 @@ function vWish(r){
     ${body||(allNames.length?'<div class="empty">Nothing matches that filter.</div>'
                             :'<div class="empty">Nothing on this list yet.<br>Tap ＋ to add a card.</div>')}`;
   loadCards(allNames);
+}
+
+/* ---------- THE ADD PANEL: how many, which printing, foil, condition ----------
+   Tapping a search hit used to add it on the spot with none of that. A physical copy
+   has a printing, a finish and a condition, and the app already stores per-list art
+   picks — so the panel writes all four in one go rather than making you add the card
+   and then go hunting for the art picker.
+
+   Printings load lazily on open: the search grid shows one tile per *card*, and pulling
+   every printing of every hit up front would be dozens of requests for a list you are
+   still typing. */
+const CONDITIONS=[['NM','Near Mint'],['LP','Lightly Played'],['MP','Moderately Played'],
+                  ['HP','Heavily Played'],['DMG','Damaged']];
+let PICK=null;        // {name, qty, foil, cond, prints, sel, loading, failed}
+
+function pickPrice(c,foil){
+  if(!c||!c.prices) return null;
+  const p=foil ? (c.prices.usd_foil||c.prices.usd_etched) : (c.prices.usd||c.prices.usd_foil);
+  return p?Number(p):null;
+}
+const canFoil=c=>!c||!c.finishes ? true : c.finishes.some(f=>f!=='nonfoil');
+const canPlain=c=>!c||!c.finishes ? true : c.finishes.includes('nonfoil');
+
+async function openPick(name,listId){
+  PICK={name, listId, qty:1, foil:false, cond:'NM', prints:[], sel:null, loading:true, failed:false};
+  drawPick();
+  try{
+    const r=await fetch('https://api.scryfall.com/cards/search?unique=prints&order=released&dir=asc&q='
+      +encodeURIComponent('!"'+name+'" game:paper'),{signal:sig(12000)});
+    if(!r.ok) throw new Error(r.status);
+    const j=await r.json();
+    if(!PICK||PICK.name!==name) return;
+    EVER_OK=true;
+    PICK.prints=j.data||[];
+    PICK.prints.forEach(c=>ART_BY_ID.set(c.id,c));
+    // default to the cheapest nonfoil printing — the one you most likely actually own
+    const plain=PICK.prints.filter(c=>canPlain(c)&&pickPrice(c,false)!=null);
+    const best=(plain.length?plain:PICK.prints).slice().sort((a,b)=>(pickPrice(a,false)??1e9)-(pickPrice(b,false)??1e9))[0];
+    PICK.sel=(best||PICK.prints[0]||{}).id||null;
+  }catch(e){ if(PICK&&PICK.name===name) PICK.failed=true; }
+  if(PICK&&PICK.name===name){ PICK.loading=false; drawPick(); }
+}
+
+function drawPick(){
+  if(!PICK) return;
+  const list=findList(PICK.listId);
+  const sel=PICK.prints.find(c=>c.id===PICK.sel)||null;
+  const price=pickPrice(sel,PICK.foil);
+  const foilOK=canFoil(sel), plainOK=canPlain(sel);
+  const img=sel?fullOf(sel):null;
+  openSheet(`
+    <div>${img?`<img src="${img}" alt="${esc(PICK.name)}">`:'<div class="empty"><span class="spin"></span>Loading printings…</div>'}</div>
+    <div>
+      <h3>${esc(PICK.name)}</h3>
+      <div class="tl">${sel?esc(printLabel(sel)):(PICK.failed?'Couldn\'t reach Scryfall':'…')}</div>
+      <div class="big">${price!=null?'$'+price.toFixed(2):'—'}${PICK.qty>1&&price!=null?` <span style="font-size:14px;color:var(--muted)">× ${PICK.qty} = $${(price*PICK.qty).toFixed(2)}</span>`:''}</div>
+
+      <div class="pickrow"><span class="pickl">Quantity</span>
+        <span class="stepper">
+          <button class="btn sm" data-qty="-1" ${PICK.qty<=1?'disabled':''}>−</button>
+          <b>${PICK.qty}</b>
+          <button class="btn sm" data-qty="1">＋</button>
+        </span></div>
+
+      <div class="pickrow"><span class="pickl">Finish</span>
+        <span class="seg">
+          <button class="segb${PICK.foil?'':' on'}" data-foil="0" ${plainOK?'':'disabled'}>Normal</button>
+          <button class="segb${PICK.foil?' on':''}" data-foil="1" ${foilOK?'':'disabled'}>Foil</button>
+        </span></div>
+
+      <div class="pickrow"><span class="pickl">Condition</span>
+        <select class="inp pickinp" id="pickCond">${CONDITIONS.map(([v,t])=>
+          `<option value="${v}"${PICK.cond===v?' selected':''}>${t}</option>`).join('')}</select></div>
+
+      <div class="sec" style="margin:18px 0 10px">Printing<span>${PICK.prints.length||''}</span></div>
+      <div class="printstrip">${PICK.prints.map(c=>`
+        <button class="pchip${c.id===PICK.sel?' on':''}" data-print="${esc(c.id)}">
+          ${artOf(c)?`<img loading="lazy" src="${artOf(c)}" alt="">`:'<i></i>'}
+          <span>${esc(printLabel(c))}</span>
+        </button>`).join('')||(PICK.loading?'<div class="note">Loading…</div>':'<div class="note">No paper printings found.</div>')}</div>
+
+      <button class="btn primary wide" id="pickAdd" style="margin-top:16px">
+        Add ${PICK.qty>1?PICK.qty+' copies':'to '+esc(list?list.name:'list')}</button>
+    </div>`,'card-detail');
 }
 
 /* ---------- ADD A CARD: search Scryfall by name, pick from the art ----------
@@ -1091,7 +1227,7 @@ function vAdd(r){
   const sects=list.sections;
   const target=sects.find(s=>s.name===r.sect)||sects[0];
   setBar('Add to '+list.name, sects.length>1?'Into '+target.name:'Search Scryfall by name',
-         {tools:true, placeholder:'Search cards…'});
+         {tools:true, placeholder:'Search cards…', searchFor:'add:'+r.id});
 
   // section picker only earns its space when there is a choice to make
   const chipbar=document.getElementById('chips');
@@ -1104,7 +1240,7 @@ function vAdd(r){
   }
 
   const counts={};
-  sects.forEach(s=>s.cards.forEach(c=>{ const k=key(c.n); counts[k]=(counts[k]||0)+1; }));
+  sects.forEach(s=>s.cards.forEach(c=>{ const k=key(c.n); counts[k]=(counts[k]||0)+entryQty(c); }));
 
   const tile=c=>{
     const n=counts[key(c.name)]||0, src=fullOf(c);
@@ -1138,9 +1274,10 @@ function vAdd(r){
 
 function cardTile(c,deckId,sectName){
   const src=tileArt(c.n,deckId);          // honours this deck's chosen printing, else the default
-  const p=priceOf(c.n);
+  const q=entryQty(c), p=entryPrice(c);
   let badge='';
-  if(c.tag===T.COMBO) badge='<div class="badge combo">Combo</div>';
+  if(q>1) badge=`<div class="badge cmd">×${q}</div>`;
+  else if(c.tag===T.COMBO) badge='<div class="badge combo">Combo</div>';
   else if(RAL_KEY.includes(c.n)) badge='<div class="badge combo">Key</div>';
   const img=src?`<img loading="lazy" src="${src}" alt="${esc(c.n)}">`
                 :`<div class="miss"><b>${esc(c.n)}</b><span style="font-size:8.5px;letter-spacing:.14em;opacity:.55">NO IMAGE</span></div>`;
@@ -1148,7 +1285,10 @@ function cardTile(c,deckId,sectName){
     ${badge}${deckId?`<button class="del" data-del="1" aria-label="Remove">✕</button>`:''}
     ${img}${MODE==='full'?`<div class="pricetag">${money(p)}</div>`:''}
     <div class="plate">
-      <div style="min-width:0"><div class="nm">${esc(c.n)}</div>${c.tag?`<div class="tg">${esc(c.tag)}</div>`:''}</div>
+      <div style="min-width:0"><div class="nm">${esc(c.n)}</div>${
+        // finish and condition only earn a line when they aren't the default
+        (()=>{ const bits=[c.tag, c.foil?'Foil':'', c.cond&&c.cond!=='NM'?c.cond:''].filter(Boolean);
+               return bits.length?`<div class="tg">${esc(bits.join(' · '))}</div>`:''; })()}</div>
       <div class="pz">${money(p)}</div>
     </div></div>`;
 }
@@ -1193,7 +1333,7 @@ function conArtists(){
 function vArtists(){
   _repaint=()=>{ if(here().v==='artists') vArtists(); };
   const {list,unknown,withCards}=conArtists();
-  setBar('Artists', list.length+' at the con', {tools:true, placeholder:'Filter artists…'});
+  setBar('Artists', list.length+' at the con', {tools:true, placeholder:'Filter artists…', searchFor:'artists'});
   const chipbar=document.getElementById('chips');
   if(chipbar.dataset.for!=='artists'){ chipbar.innerHTML=''; chipbar.dataset.for='artists'; }
   const q=document.getElementById('search').value.toLowerCase().trim();
@@ -1314,7 +1454,7 @@ async function runScan(){
 
 function vSigning(){
   _repaint=()=>{ if(here().v==='signing') vSigning(); };
-  setBar('Signing','Con artist crossover',{tools:!!SCAN});
+  setBar('Signing','Con artist crossover',{tools:!!SCAN,searchFor:'signing'});
   const m=document.getElementById('main');
 
   if(SCANNING){
@@ -1420,7 +1560,7 @@ function vSource(r){
   _repaint=()=>{ if(here().v==='source') vSource(here()); };
   const m=findMove(r.id); const s=m&&m.sources.find(x=>x.id===r.sid);
   if(!s) return back();
-  setBar(s.name.split(',')[0],'Cards removed',{tools:true});
+  setBar(s.name.split(',')[0],'Cards removed',{tools:true,searchFor:'source:'+r.id+'|'+r.sid});
   const q=document.getElementById('search').value.toLowerCase().trim();
   let cards=s.cards; if(q) cards=cards.filter(c=>c.n.toLowerCase().includes(q));
   const t=totalOf(s.cards.map(c=>c.n));
@@ -1590,7 +1730,7 @@ function vArts(r){
   const rec=ART_SETS.get(spec.key);
   setBar(subject, mode==='artist' ? 'Every artwork'
                  : byArtist ? 'This card, by '+byArtist
-                 : 'Every artwork of this card', {tools:true});
+                 : 'Every artwork of this card', {tools:true, searchFor:'arts:'+spec.key});
   const q=document.getElementById('search').value.toLowerCase().trim();
   // allOwnedNames() returns an array; a Set keeps the per-tile check O(1) across
   // the several hundred tiles a prolific artist produces.
@@ -1679,7 +1819,7 @@ function sheetWishPick(name){
       const has=onWish(w,name);
       return `<button class="btn wide" data-wishput="${esc(w.id)}" style="margin-top:10px;text-align:left${
         has?';border-color:var(--green);color:var(--green)':''}">
-        ${has?'✓ ':'＋ '}${esc(w.name)} <span style="color:var(--muted);font-size:12px">· ${wishNames(w).length} cards</span></button>`;
+        ${has?'✓ ':'＋ '}${esc(w.name)} <span style="color:var(--muted);font-size:12px">· ${countEntries(w)} cards</span></button>`;
     }).join('')}`);
 }
 
@@ -1906,13 +2046,33 @@ document.addEventListener('click',async e=>{
   const asect=t.closest('[data-addsect]');
   if(asect){ here().sect=asect.dataset.addsect; return vAdd(here()); }
   const addc=t.closest('[data-addcard]');
-  if(addc){
-    const r=here(), list=findList(r.id); if(!list) return;
+  if(addc) return openPick(addc.dataset.addcard, here().id);
+  /* --- inside the add panel --- */
+  const pq=t.closest('[data-qty]');
+  if(pq&&PICK){ PICK.qty=Math.max(1,Math.min(99,PICK.qty+Number(pq.dataset.qty))); return drawPick(); }
+  const pf=t.closest('[data-foil]');
+  if(pf&&PICK&&!pf.disabled){ PICK.foil=pf.dataset.foil==='1'; return drawPick(); }
+  const pp=t.closest('[data-print]');
+  if(pp&&PICK){
+    PICK.sel=pp.dataset.print;
+    const c=PICK.prints.find(x=>x.id===PICK.sel);
+    // a printing that exists in only one finish decides the toggle for you
+    if(c&&!canFoil(c)) PICK.foil=false;
+    if(c&&!canPlain(c)) PICK.foil=true;
+    return drawPick();
+  }
+  if(t.closest('#pickAdd')&&PICK){
+    const list=findList(PICK.listId); if(!list) return;
+    const r=here();
     const sect=list.sections.find(s=>s.name===r.sect)||list.sections[0];
     // a wishlist is a list of wants, not a changelog — the "Added" tag only means
     // something in a deck, where it marks what wasn't in the original build
-    sect.cards.push({n:addc.dataset.addcard, tag:findWish(r.id)?'':T.ADD});
-    save(); return vAdd(r);
+    sect.cards.push({n:PICK.name, tag:findWish(PICK.listId)?'':T.ADD,
+                     qty:PICK.qty, foil:PICK.foil, cond:PICK.cond, pid:PICK.sel||''});
+    const chosen=PICK.prints.find(c=>c.id===PICK.sel);
+    if(chosen) setCardArt(PICK.listId,PICK.name,chosen);   // same store the art picker writes
+    save(); PICK=null; closeSheet();
+    return here().v==='add'?vAdd(here()):render();
   }
   if(t.closest('#addByName')) return sheetAddCard(here().id);
   const wput=t.closest('[data-wishput]');
