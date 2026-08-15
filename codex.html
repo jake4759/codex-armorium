@@ -1309,30 +1309,32 @@ function cardTile(c,deckId,sectName){
 const ARTIST_ALIAS={'Dan Murayama Scott':'Dan Scott'};
 const canonArtist=a=>ARTIST_ALIAS[a]||a;
 
+/* Counting has to mean "some printing of a card you own is by them", which is exactly
+   what the scan asks Scryfall. Reading CACHE instead answered a different question — the
+   *default* printing's artist — and got it wrong in a way that showed: you own Orcish
+   Lumberjack, Scryfall's default is Steve Prescott's Vintage Masters art, so Phil Foglio
+   counted zero while his own page badged that very card as yours. One source of truth. */
 function conArtists(){
   const map=new Map();
   CON_ARTISTS.forEach(a=>{
     const n=canonArtist(a);
     if(!map.has(n)) map.set(n,{name:n,cards:new Set(),sample:null});
   });
-  let known=0, unknown=0;
-  allOwnedNames().forEach(n=>{
-    const c=CACHE.get(key(n));
-    if(!c||!c.artist){ unknown++; return; }
-    known++;
-    (byConArtist(c.artist)||[]).forEach(a=>{
+  if(SCAN&&SCAN.groups){
+    Object.keys(SCAN.groups).forEach(a=>{
       const e=map.get(canonArtist(a)); if(!e) return;
-      e.cards.add(c.name);
-      if(!e.sample) e.sample=artOf(c);
+      SCAN.groups[a].forEach(c=>{ e.cards.add(c.name); if(!e.sample) e.sample=artOf(c); });
     });
-  });
+  }
   const list=[...map.values()].sort((x,y)=>y.cards.size-x.cards.size||x.name.localeCompare(y.name));
-  return {list, known, unknown, withCards:list.filter(a=>a.cards.size).length};
+  return {list, scanned:!!SCAN, withCards:list.filter(a=>a.cards.size).length};
 }
 
 function vArtists(){
   _repaint=()=>{ if(here().v==='artists') vArtists(); };
-  const {list,unknown,withCards}=conArtists();
+  // the counts come from the scan, so make sure one has run
+  if(!SCAN&&!SCANNING) runScan();
+  const {list,scanned,withCards}=conArtists();
   setBar('Artists', list.length+' at the con', {tools:true, placeholder:'Filter artists…', searchFor:'artists'});
   const chipbar=document.getElementById('chips');
   if(chipbar.dataset.for!=='artists'){ chipbar.innerHTML=''; chipbar.dataset.for='artists'; }
@@ -1342,10 +1344,11 @@ function vArtists(){
   document.getElementById('main').innerHTML=`
     <div class="totalbar">
       <div><div class="l">Artists at the con</div><div class="v">${list.length}</div></div>
-      <div style="text-align:right"><div class="l">${withCards} you own cards by${unknown?` · ${unknown} still loading`:''}</div>
+      <div style="text-align:right"><div class="l">${scanned?`${withCards} you have cards for`:esc(SCANMSG||'Checking your cards…')}</div>
       <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
         <button class="btn sm" id="conBtn">Signing list ›</button></div></div>
     </div>
+    ${scanned?'':'<div class="note"><span class="spin"></span>Checking every printing of your cards against the lineup — an artist can be on a card whose usual art is someone else\'s.</div>'}
     <div class="rows">${shown.map(a=>`
       <button class="lrow" data-artistgo="${esc(a.name)}">
         <div class="por" style="${a.sample?`background-image:url('${a.sample}')`:''}"></div>
@@ -1438,6 +1441,7 @@ async function runScan(){
     done++;
     SCANMSG='Scanning '+done+' / '+parts.length+' — '+found.size+' printings found';
     if(here().v==='signing') vSigning();
+    else if(here().v==='artists') vArtists();
     await new Promise(r=>setTimeout(r,110));
   }
   // group by artist
@@ -1450,6 +1454,7 @@ async function runScan(){
   SCAN={groups, byId, total:found.size, cards:new Set([...found.values()].map(c=>c.name)), failed, parts:parts.length, searched:names.length};
   SCANNING=false; SCANMSG='';
   if(here().v==='signing') vSigning();
+  else if(here().v==='artists') vArtists();
 }
 
 function vSigning(){
@@ -1694,8 +1699,10 @@ function artTile(c,mode,mark,owned,deckId){
   const picking = mode==='card' && !!deckId;
   const picked = picking && (artPick(c.name,deckId)||{}).id===c.id;
   const hit = mode==='artist' ? owned.has(c.name) : (mark && c.artist===mark);
+  /* "Owned" overclaimed: the match is by card name, so it means a deck of yours runs this
+     card — not that you own this printing of it. "In a deck" says only what's true. */
   const badge = picked ? '<div class="badge cmd">In use</div>'
-              : hit ? `<div class="badge ${mode==='artist'?'cmd':'combo'}">${mode==='artist'?'Owned':'Same artist'}</div>`
+              : hit ? `<div class="badge ${mode==='artist'?'cmd':'combo'}">${mode==='artist'?'In a deck':'Same artist'}</div>`
               : '';
   const hook = picking
     ? `data-useart="${esc(c.id)}" data-artname="${esc(c.name)}"`
