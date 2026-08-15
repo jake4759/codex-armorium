@@ -28,6 +28,16 @@
     --line:rgba(227,183,101,.11);
     --shadow-sm:0 1px 2px rgba(0,0,0,.40), 0 4px 14px rgba(0,0,0,.28);
     --shadow-md:0 6px 18px rgba(0,0,0,.45), 0 18px 44px rgba(0,0,0,.36);
+    /* Three faces, each with a job. All system-resident on purpose: a webfont that fails
+       to arrive is worse than one that was never fancy, and this has to run offline.
+       --f-display carries the character (Iowan/Palatino are warmer and better-spaced than
+       Georgia, which is why they lead the stack); --f-ui stays boring so card text and
+       labels read fast; --f-num is tabular so prices line up in a column instead of
+       jittering, which is the whole point of a money figure. */
+    --f-display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --f-ui:-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",Roboto,system-ui,sans-serif;
+    --f-num:ui-monospace,"SF Mono","Cascadia Mono","Segoe UI Mono",Menlo,Consolas,monospace;
+
     --bar:60px; --tab:78px;
     --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
     --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
@@ -37,7 +47,7 @@
   html{-webkit-text-size-adjust:100%}
   body{
     background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-family:var(--f-ui);
     background-image:
       radial-gradient(900px 420px at 88% -8%, rgba(163,51,42,.10), transparent 62%),
       radial-gradient(760px 400px at 2% 6%, rgba(70,115,58,.10), transparent 62%),
@@ -68,7 +78,7 @@
   .icobtn[hidden]{display:none}
   .barttl{flex:1;min-width:0}
   .barttl h1{
-    font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:22px;letter-spacing:.01em;
+    font-family:var(--f-display);font-weight:400;font-size:23px;letter-spacing:.005em;
     color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;
   }
   .barttl .sub{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
@@ -107,14 +117,15 @@
     content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;
     background:radial-gradient(circle,rgba(201,166,104,.30),transparent 68%);pointer-events:none;
   }
-  .hero h2{font-family:Georgia,serif;font-weight:400;font-size:30px;line-height:1.12;margin-bottom:8px;color:#f6ecd9}
+  .hero h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.12;margin-bottom:8px;color:#f6ecd9}
   .hero p{font-size:14px;color:rgba(246,236,217,.72);line-height:1.55;max-width:46ch}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
   .stat{
     border:none;border-radius:22px;background:var(--surface);box-shadow:var(--shadow-sm);
     padding:18px 12px;text-align:center;
   }
-  .stat b{display:block;font-family:Georgia,serif;font-size:26px;color:var(--gold);font-weight:400;line-height:1.15}
+  .stat b{display:block;font-family:var(--f-display);font-size:28px;color:var(--gold);
+          font-weight:400;line-height:1.15;font-variant-numeric:tabular-nums}
   .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:600}
 
   /* ---------- big menu cards ---------- */
@@ -135,7 +146,7 @@
   .mbtn::after{content:"→";position:absolute;right:22px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:20px;opacity:.5}
   .mbtn:active{transform:scale(.985)}
   .mbtn .k{font-size:10.5px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;font-weight:700;position:relative}
-  .mbtn h2{font-family:Georgia,serif;font-weight:400;font-size:25px;color:var(--text);margin:8px 0 7px;position:relative}
+  .mbtn h2{font-family:var(--f-display);font-weight:400;font-size:25px;color:var(--text);margin:8px 0 7px;position:relative}
   .mbtn p{font-size:13.5px;color:var(--muted);line-height:1.6;padding-right:26px;position:relative}
 
   /* ---------- list rows ---------- */
@@ -148,10 +159,11 @@
   .lrow .por{width:96px;flex:0 0 96px;align-self:stretch;background:var(--surface3) center/cover no-repeat;position:relative}
   .lrow .por::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 35%,var(--surface))}
   .lrow .body{flex:1;min-width:0;padding:14px 34px 14px 0}
-  .lrow h3{font-family:Georgia,serif;font-weight:400;font-size:17px;color:var(--text);line-height:1.25}
+  .lrow h3{font-family:var(--f-display);font-weight:400;font-size:17px;color:var(--text);line-height:1.25}
   .lrow .m{font-size:12.5px;color:var(--muted);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lrow .chev{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--gold);opacity:.5;font-size:20px}
-  .lrow .val{font-size:13px;color:var(--green);margin-top:4px;font-weight:600}
+  .lrow .val{font-family:var(--f-num);font-size:13px;color:var(--green);margin-top:4px;
+             font-weight:600;font-variant-numeric:tabular-nums}
 
   /* wishlist banners — the cover art fills the whole row instead of a 96px strip,
      with a scrim heavy enough on the left that the name stays readable over any art */
@@ -165,14 +177,21 @@
   .lrow.banner .bl{min-width:0}
 
   /* ---------- sections ---------- */
+  /* The count belongs beside the word, not exiled to the far margin — "Creature 25" is
+     one fact and reads as one. Numbers sit in the tabular face so a column of prices
+     lines up on the decimal. */
   .sec{
-    font-family:Georgia,serif;font-size:18px;color:var(--text);margin:24px 0 12px;
-    display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-weight:400;
+    font-family:var(--f-display);font-size:22px;color:var(--text);margin:28px 0 13px;
+    display:flex;justify-content:flex-start;align-items:baseline;gap:11px;flex-wrap:wrap;
+    font-weight:400;letter-spacing:.004em;
   }
-  .sec span{font-size:12px;color:var(--muted);font-family:inherit}
+  .sec span{font-family:var(--f-num);font-size:14px;color:var(--gold);
+            font-variant-numeric:tabular-nums;letter-spacing:.01em}
+  .sec em{font-family:var(--f-num);font-size:14px;color:var(--green);font-style:normal;
+          font-variant-numeric:tabular-nums;letter-spacing:.01em}
   /* artist headings in Signing double as a way into that illustrator's full body of work */
   .secbtn{width:100%;text-align:left;background:none;border:0}
-  .secbtn span{color:var(--gold);opacity:.8}
+  .secbtn span{color:var(--gold);opacity:.85;margin-left:auto}
   .secbtn:active{opacity:.6}
   .note{font-size:13.5px;color:var(--muted);line-height:1.65;margin:0 0 14px;
         background:var(--surface);border-left:3px solid var(--gold);border-radius:0 14px 14px 0;padding:12px 14px}
@@ -182,7 +201,8 @@
     background:linear-gradient(135deg,var(--surface2),var(--surface));padding:16px 18px;margin-bottom:8px;
   }
   .totalbar .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
-  .totalbar .v{font-family:Georgia,serif;font-size:26px;color:var(--gold);margin-top:2px}
+  .totalbar .v{font-family:var(--f-display);font-size:28px;color:var(--gold);margin-top:2px;
+               font-variant-numeric:tabular-nums;letter-spacing:.002em}
 
   /* ---------- card grid ---------- */
   .grid{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
@@ -197,7 +217,8 @@
   .grid.full .card .plate{display:none}
   .card .nm{font-size:12.5px;line-height:1.35;color:var(--text);min-width:0}
   .card .tg{font-size:10.5px;color:var(--muted);margin-top:3px}
-  .card .pz{font-size:12px;color:var(--green);white-space:nowrap;flex:0 0 auto;font-weight:600}
+  .card .pz{font-family:var(--f-num);font-size:11.5px;color:var(--green);white-space:nowrap;
+            flex:0 0 auto;font-weight:600;font-variant-numeric:tabular-nums}
   .card .miss{
     aspect-ratio:626/457;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
     padding:12px;text-align:center;line-height:1.35;font-size:11.5px;color:var(--muted);background:var(--surface3);
@@ -218,7 +239,7 @@
            padding:11px 0;border-bottom:1px solid rgba(217,180,91,.12)}
   .pickl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
   .stepper{display:flex;align-items:center;gap:12px}
-  .stepper b{font-family:Georgia,serif;font-size:20px;color:var(--gold);min-width:22px;text-align:center}
+  .stepper b{font-family:var(--f-display);font-size:20px;color:var(--gold);min-width:22px;text-align:center}
   .seg{display:flex;border:1px solid rgba(217,180,91,.3);border-radius:12px;overflow:hidden}
   .segb{padding:7px 15px;font-size:12.5px;color:var(--muted);background:none}
   .segb.on{background:var(--gold);color:#1a1311;font-weight:600}
@@ -287,7 +308,7 @@
   .seat{position:relative;border-radius:24px;display:flex;align-items:center;justify-content:center;
         overflow:hidden;color:#12100f;min-height:0}
   .seat.flip{transform:rotate(180deg)}
-  .seat .tot{font-family:Georgia,serif;font-size:clamp(46px,13vh,110px);line-height:1;
+  .seat .tot{font-family:var(--f-display);font-size:clamp(46px,13vh,110px);line-height:1;
              pointer-events:none;font-weight:400;letter-spacing:-.02em}
   /* the whole half is the button — at arm's length you jab the side of the panel,
      you do not aim for a 44px target */
@@ -311,7 +332,7 @@
   /* commander damage / counters panel, opened from a seat */
   .cmdgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin-top:10px}
   .cmdcell{border:1px solid rgba(217,180,91,.25);border-radius:16px;padding:10px;text-align:center}
-  .cmdcell b{display:block;font-family:Georgia,serif;font-size:26px;color:var(--gold);margin:4px 0}
+  .cmdcell b{display:block;font-family:var(--f-display);font-size:26px;color:var(--gold);margin:4px 0}
   .cmdcell .who{font-size:10.5px;color:var(--muted);letter-spacing:.06em}
   .cmdcell.lethal{border-color:var(--red)}
   .cmdcell.lethal b{color:#ff8a8a}
@@ -335,13 +356,13 @@
      background:var(--surface3);border:1px solid rgba(217,180,91,.28);color:var(--gold);font-size:18px;
      display:flex;align-items:center;justify-content:center}
   #sheet img{width:100%;border-radius:16px;display:block;margin-bottom:14px}
-  #sheet h3{font-family:Georgia,serif;font-size:22px;color:var(--text);font-weight:400;margin-bottom:5px}
+  #sheet h3{font-family:var(--f-display);font-size:22px;color:var(--text);font-weight:400;margin-bottom:5px}
   #sheet .tl{font-size:12.5px;color:var(--muted);margin-bottom:14px}
   #sheet .ot{font-size:14.5px;line-height:1.75;white-space:pre-wrap;background:var(--surface2);
              border-radius:16px;padding:14px 16px;margin-bottom:16px}
   #sheet .kv{font-size:12.5px;color:var(--muted);line-height:2.1}
   #sheet .kv b{color:var(--gold);font-weight:400}
-  #sheet .big{font-family:Georgia,serif;font-size:30px;color:var(--green);margin:2px 0 14px}
+  #sheet .big{font-family:var(--f-display);font-size:30px;color:var(--green);margin:2px 0 14px}
 
   /* ---------- forms ---------- */
   label{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
@@ -439,7 +460,7 @@
 <div class="status" id="net"></div>
 <main id="main">
   <div id="bootmsg" class="empty" style="border:1px solid var(--gold-dim);border-radius:14px;background:var(--plate);padding:26px 20px">
-    <div style="font-family:Georgia,serif;font-size:19px;color:var(--gold);letter-spacing:.1em;margin-bottom:12px">THE HOARD LIES SEALED</div>
+    <div style="font-family:var(--f-display);font-size:19px;color:var(--gold);letter-spacing:.1em;margin-bottom:12px">THE HOARD LIES SEALED</div>
     <div style="text-align:left;max-width:460px;margin:0 auto;line-height:1.75">
       This page is still loading, or JavaScript is switched off in whatever is showing it.<br><br>
       <b style="color:var(--bone)">If you are looking at this inside the Claude app's file preview, that preview does not run scripts.</b>
@@ -1122,8 +1143,8 @@ function vDeck(r){
   const filtered=d.sections.map(s=>({name:s.name,note:s.note,cards:s.cards.filter(c=>
     (!q||c.n.toLowerCase().includes(q)) && (!active||c.tag===active))}));
   const body=groupList(d,filtered).map(g=>{
-    const st=totalOfEntries(g.entries);
-    return `<div class="sec">${esc(g.header)}<span>${g.entries.reduce((n,e)=>n+entryQty(e),0)} cards · ${st.known?money(st.sum):'—'}</span></div>
+    const st=totalOfEntries(g.entries), n=g.entries.reduce((a,e)=>a+entryQty(e),0);
+    return `<div class="sec">${esc(g.header)}<span>${n}</span><em>${st.known?money(st.sum):'—'}</em></div>
       ${g.note&&!q&&!active?`<div class="note">${esc(g.note)}</div>`:''}
       <div class="grid ${MODE}">${g.entries.map(c=>cardTile(c,d.id,g.header)).join('')}</div>`;
   }).join('');
@@ -1211,7 +1232,7 @@ function vWish(r){
     if(active) cards=cards.filter(c=>c.tag===active);
     if(!cards.length) return '';
     const st=totalOfEntries(cards);
-    return `<div class="sec">${esc(s.name)}<span>${cards.reduce((n,e)=>n+entryQty(e),0)} cards · ${st.known?money(st.sum):'—'}</span></div>
+    return `<div class="sec">${esc(s.name)}<span>${cards.reduce((n,e)=>n+entryQty(e),0)}</span><em>${st.known?money(st.sum):'—'}</em></div>
       ${s.note&&!q&&!active?`<div class="note">${esc(s.note)}</div>`:''}
       <div class="grid ${MODE}">${cards.map(c=>cardTile(c,w.id,s.name)).join('')}</div>`;
   }).join('');
@@ -1537,7 +1558,7 @@ function vRec(r){
     : rec.missing ? `<div class="empty">EDHREC has no page for <b>${esc(d.commander)}</b>.<br>It may be too new, or not a legal commander.</div>`
     : rec.failed ? '<div class="empty">Couldn\'t reach EDHREC.<br>Check your connection and go back in.</div>'
     : !lists.length ? '<div class="empty">Nothing matches that filter.</div>'
-    : lists.map(l=>`<div class="sec">${esc(l.header)}<span>${l.cards.length} cards</span></div>
+    : lists.map(l=>`<div class="sec">${esc(l.header)}<span>${l.cards.length}</span></div>
         <div class="grid ${MODE}">${l.cards.map(tile).join('')}</div>`).join('');
 
   const total=lists.reduce((n,l)=>n+l.cards.length,0);
@@ -1609,7 +1630,7 @@ function vLife(){
     `<div class="lifewrap" style="grid-template-columns:1fr 1fr;grid-template-rows:repeat(${rows.length},1fr)">${html}</div>
      <button class="lifehub" id="lifeHub">☰</button>
      ${alive.length===1&&n>1?`<div class="lifemenu" id="lifeWin"><div class="inner" style="text-align:center">
-        <div style="font-family:Georgia,serif;font-size:26px;color:var(--gold)">Player ${alive[0].i+1} wins</div>
+        <div style="font-family:var(--f-display);font-size:26px;color:var(--gold)">Player ${alive[0].i+1} wins</div>
         <button class="btn primary wide" id="lifeAgain">Play again</button>
         <button class="btn wide" id="lifeQuit">Leave</button></div></div>`:''}`;
 }
@@ -1621,7 +1642,7 @@ function vLifeSetup(){
   document.getElementById('main').innerHTML=`
     <div class="lifewrap" style="grid-template-columns:1fr;grid-template-rows:1fr;background:var(--bg)">
       <div style="overflow:auto;padding:26px 18px;align-self:center">
-        <div style="font-family:Georgia,serif;font-size:30px;color:var(--gold);text-align:center;margin-bottom:6px">Life Counter</div>
+        <div style="font-family:var(--f-display);font-size:30px;color:var(--gold);text-align:center;margin-bottom:6px">Life Counter</div>
         <div class="note" style="margin-bottom:18px">Lay the phone flat in the middle of the table — the far seats are drawn upside down so they read the right way round.</div>
         <div class="sec">Players</div>
         <div class="btnrow">${[2,3,4,5,6].map(c=>
@@ -2246,7 +2267,7 @@ function showCardObj(c,deckId){
       <h3>${esc(c.name)}</h3>
       <div class="tl">${esc(c.set_name||'')} · #${esc(c.collector_number||'')}</div>
       <div class="l" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Illustrated by</div>
-      <div style="font-family:Georgia,serif;font-size:19px;color:var(--gold);margin:2px 0 10px">${esc(c.artist||'—')}</div>
+      <div style="font-family:var(--f-display);font-size:19px;color:var(--gold);margin:2px 0 10px">${esc(c.artist||'—')}</div>
       <div class="l" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">TCGplayer market</div>
       <div class="big">${p.usd?'$'+p.usd:(p.usd_foil?'$'+p.usd_foil+' (foil)':'—')}</div>
       <div class="ot">${txt}</div>
@@ -2749,6 +2770,20 @@ document.getElementById('search').addEventListener('input',()=>{
   }
   render();
 });
+/* A mouse wheel emits deltaY; the printing strip and the chip bar only scroll on X, so
+   on a desktop they look frozen. Translate one axis into the other — but hand the event
+   back to the page once the strip is at either end, otherwise the wheel gets swallowed
+   and the sheet behind it stops scrolling. Trackpads already sending deltaX are left alone. */
+document.addEventListener('wheel',e=>{
+  const strip=e.target&&e.target.closest&&e.target.closest('.printstrip,.chips');
+  if(!strip||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return;
+  const max=strip.scrollWidth-strip.clientWidth;
+  if(max<=1) return;
+  if((e.deltaY<0&&strip.scrollLeft<=0)||(e.deltaY>0&&strip.scrollLeft>=max-1)) return;
+  strip.scrollLeft+=e.deltaY;
+  e.preventDefault();
+},{passive:false});
+
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
 
 /* ==========================================================
