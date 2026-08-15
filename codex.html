@@ -866,6 +866,95 @@ function totalOfEntries(entries){
 const listEntries=l=>l.sections.flatMap(s=>s.cards);
 const countEntries=l=>listEntries(l).reduce((n,e)=>n+entryQty(e),0);
 
+/* ---------- grouping and sorting a list ----------
+   Type comes off Scryfall's type_line, so a card Scryfall hasn't answered for yet lands
+   in Unknown rather than silently in the wrong pile.
+
+   Order of the tests is the whole trick. A card is checked most-specific first, which is
+   why Dryad Arbor files under Creature and not Land, and Sol Ring under Artifact — the
+   same convention Archidekt and Moxfield use, so a decklist looks like you expect. */
+const TYPE_ORDER=['Commander','Creature','Planeswalker','Instant','Sorcery','Artifact',
+                  'Enchantment','Battle','Land','Unknown'];
+function cardType(name,list){
+  if(list&&list.commander&&key(list.commander)===key(name)) return 'Commander';
+  const c=CACHE.get(key(name));
+  const t=(c&&c.type_line)||'';
+  if(!t) return 'Unknown';
+  if(/Creature/.test(t))     return 'Creature';
+  if(/Planeswalker/.test(t)) return 'Planeswalker';
+  if(/Instant/.test(t))      return 'Instant';
+  if(/Sorcery/.test(t))      return 'Sorcery';
+  if(/Artifact/.test(t))     return 'Artifact';
+  if(/Enchantment/.test(t))  return 'Enchantment';
+  if(/Battle/.test(t))       return 'Battle';
+  if(/Land/.test(t))         return 'Land';
+  return 'Unknown';
+}
+const COLOR_NAMES={W:'White',U:'Blue',B:'Black',R:'Red',G:'Green'};
+function cardColor(name){
+  const c=CACHE.get(key(name)); if(!c) return 'Unknown';
+  const ci=c.color_identity||[];
+  if(!ci.length) return 'Colourless';
+  if(ci.length>1) return 'Multicolour';
+  return COLOR_NAMES[ci[0]]||'Unknown';
+}
+const cardCmc=name=>{ const c=CACHE.get(key(name)); return c&&typeof c.cmc==='number'?c.cmc:null; };
+
+const VIEW=()=>Object.assign({group:'type',sort:'name'},STATE.view||{});
+const GROUPS={type:'Type',cmc:'Mana value',color:'Colour',section:'Deck sections',none:'Everything'};
+const SORTS ={name:'Name',price:'Price',cmc:'Mana value',type:'Type'};
+
+/* Returns [{header, entries, sub}] honouring the current group and sort. `sections` is
+   what the deck was built with, so it stays available — a manually curated order is
+   information the automatic grouping can't reproduce. */
+function groupList(list,entriesBySection){
+  const v=VIEW();
+  let groups;
+  if(v.group==='section'){
+    groups=entriesBySection.map(s=>({header:s.name,entries:s.cards,note:s.note}));
+  }else if(v.group==='none'){
+    groups=[{header:'All cards',entries:entriesBySection.flatMap(s=>s.cards)}];
+  }else{
+    const all=entriesBySection.flatMap(s=>s.cards);
+    const keyOf=e=>v.group==='type'  ? cardType(e.n,list)
+                 : v.group==='color' ? cardColor(e.n)
+                 : (cardCmc(e.n)==null?'Unknown':'MV '+cardCmc(e.n));
+    const m=new Map();
+    all.forEach(e=>{ const k=keyOf(e); if(!m.has(k)) m.set(k,[]); m.get(k).push(e); });
+    groups=[...m.entries()].map(([header,entries])=>({header,entries}));
+    const order = v.group==='type' ? TYPE_ORDER
+                : v.group==='color'? ['White','Blue','Black','Red','Green','Multicolour','Colourless','Unknown']
+                : null;
+    groups.sort((a,b)=>{
+      if(order){ const ia=order.indexOf(a.header), ib=order.indexOf(b.header);
+                 return (ia<0?99:ia)-(ib<0?99:ib); }
+      const na=Number((a.header.match(/[\d.]+/)||[999])[0]), nb=Number((b.header.match(/[\d.]+/)||[999])[0]);
+      return na-nb;
+    });
+  }
+  const cmp={
+    name:(a,b)=>a.n.localeCompare(b.n),
+    price:(a,b)=>(entryPrice(b)??-1)-(entryPrice(a)??-1),
+    cmc:(a,b)=>(cardCmc(a.n)??99)-(cardCmc(b.n)??99)||a.n.localeCompare(b.n),
+    type:(a,b)=>TYPE_ORDER.indexOf(cardType(a.n,list))-TYPE_ORDER.indexOf(cardType(b.n,list))||a.n.localeCompare(b.n)
+  }[v.sort]||((a,b)=>a.n.localeCompare(b.n));
+  groups.forEach(g=>{ g.entries=g.entries.slice().sort(cmp); });
+  return groups.filter(g=>g.entries.length);
+}
+
+function sheetView(){
+  const v=VIEW();
+  openSheet(`<h3>Arrange</h3><div class="tl">How this list is laid out</div>
+    <div class="sec">Group by</div>
+    <div class="btnrow">${Object.entries(GROUPS).map(([k,t])=>
+      `<button class="btn ${v.group===k?'primary':''}" data-vgroup="${k}">${t}</button>`).join('')}</div>
+    <div class="sec">Sort within a group</div>
+    <div class="btnrow">${Object.entries(SORTS).map(([k,t])=>
+      `<button class="btn ${v.sort===k?'primary':''}" data-vsort="${k}">${t}</button>`).join('')}</div>
+    <div class="note" style="margin-top:16px">Deck sections keeps the order you built the
+      list in. Everything else is worked out from the cards themselves.</div>`);
+}
+
 function totalOf(names){
   let sum=0,known=0,unknown=0;
   names.forEach(n=>{const p=priceOf(n); if(p==null)unknown++; else{sum+=p;known++;}});
@@ -1030,17 +1119,13 @@ function vDeck(r){
   const q=document.getElementById('search').value.toLowerCase().trim();
   const t=totalOfEntries(listEntries(d));
 
-  let shown=0;
-  const body=d.sections.map(s=>{
-    let cards=s.cards;
-    if(q) cards=cards.filter(c=>c.n.toLowerCase().includes(q));
-    if(active) cards=cards.filter(c=>c.tag===active);
-    if(!cards.length) return '';
-    shown+=cards.length;
-    const st=totalOfEntries(cards);
-    return `<div class="sec">${esc(s.name)}<span>${cards.reduce((n,e)=>n+entryQty(e),0)} cards · ${st.known?money(st.sum):'—'}</span></div>
-      ${s.note&&!q&&!active?`<div class="note">${esc(s.note)}</div>`:''}
-      <div class="grid ${MODE}">${cards.map(c=>cardTile(c,d.id,s.name)).join('')}</div>`;
+  const filtered=d.sections.map(s=>({name:s.name,note:s.note,cards:s.cards.filter(c=>
+    (!q||c.n.toLowerCase().includes(q)) && (!active||c.tag===active))}));
+  const body=groupList(d,filtered).map(g=>{
+    const st=totalOfEntries(g.entries);
+    return `<div class="sec">${esc(g.header)}<span>${g.entries.reduce((n,e)=>n+entryQty(e),0)} cards · ${st.known?money(st.sum):'—'}</span></div>
+      ${g.note&&!q&&!active?`<div class="note">${esc(g.note)}</div>`:''}
+      <div class="grid ${MODE}">${g.entries.map(c=>cardTile(c,d.id,g.header)).join('')}</div>`;
   }).join('');
 
   document.getElementById('main').innerHTML=`
@@ -1050,6 +1135,7 @@ function vDeck(r){
         <div class="l">${countEntries(d)} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
         <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
           <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
+          <button class="btn sm" id="viewBtn">⊞ ${esc(GROUPS[VIEW().group]||'Type')}</button>
           <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
           <button class="btn sm" id="recBtn">EDHREC ›</button>
         </div>
@@ -1964,8 +2050,13 @@ function printLabel(c){
     .filter(Boolean).join(' · ');
 }
 
+/* Full card by default, not the art crop. The picker's whole job since the Grand
+   Abolisher fix is telling printings apart, and a crop physically cannot show you a
+   frame treatment — borderless, showcase and etched all crop to the same picture. */
+let ARTFULL=true;
+
 function artTile(c,mode,mark,owned,deckId){
-  const src=artOf(c);
+  const src=ARTFULL?(fullOf(c)||artOf(c)):artOf(c);
   const price=c.prices&&c.prices.usd?'$'+c.prices.usd:'';
   const caption = mode==='artist' ? (c.name||'—') : (c.artist||'—');
   const sub = mode==='artist' ? (c.set_name||'') : printLabel(c);
@@ -2027,13 +2118,15 @@ function vArts(r){
     <div class="totalbar">
       <div><div class="l">${mode==='artist'?'Illustrated by':byArtist?esc(byArtist)+'’s printings of':'Every artwork of'}</div>
            <div class="v" style="font-size:22px">${esc(subject)}</div></div>
-      <div style="text-align:right"><div class="l" id="artcount">${esc(artStatus(rec,mode))}</div></div>
+      <div style="text-align:right"><div class="l" id="artcount">${esc(artStatus(rec,mode))}</div>
+      <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
+        <button class="btn sm" id="artModeBtn">${ARTFULL?'Art crops':'Full cards'}</button></div></div>
     </div>
     ${mode==='card'?`<div class="note">${deck
         ? `Tap any artwork to use it on this card's tiles in <b style="color:var(--gold)">${esc(deck.name)}</b>. Other decks keep their own.`
         : `Tap any artwork to open that printing. Open this card from inside a deck to change its tile art.`}${
        artPick(subject,deckId)?` <button class="btn sm" id="artReset" style="margin-left:6px">Use default again</button>`:''}</div>`:''}
-    <div class="grid art" id="artgrid">${tiles(list)}</div>
+    <div class="grid ${ARTFULL?'addgrid':'art'}" id="artgrid">${tiles(list)}</div>
     ${!rec||(!rec.done&&!rec.cards.length)?'<div class="empty"><span class="spin"></span>Summoning every artwork…</div>':''}
     ${rec&&rec.done&&!rec.cards.length?`<div class="empty">Nothing found for ${esc(subject)}.${
        mode==='artist'?'<br>Scryfall may credit them under a different name.'
@@ -2330,6 +2423,12 @@ document.addEventListener('click',async e=>{
   // artist heading in Signing -> that illustrator's whole body of work
   const ago=t.closest('[data-artistgo]');
   if(ago) return go({v:'arts',subject:ago.dataset.artistgo,mode:'artist',artist:ago.dataset.artistgo,deck:''});
+  /* --- group & sort --- */
+  if(t.closest('#viewBtn')) return sheetView();
+  const vg=t.closest('[data-vgroup]');
+  if(vg){ STATE.view=Object.assign({},VIEW(),{group:vg.dataset.vgroup}); save(); sheetView(); return render(); }
+  const vs=t.closest('[data-vsort]');
+  if(vs){ STATE.view=Object.assign({},VIEW(),{sort:vs.dataset.vsort}); save(); sheetView(); return render(); }
   /* --- EDHREC --- */
   if(t.closest('#recBtn')){ RECTAG=''; return go({v:'rec',id:here().id}); }
   const rt=t.closest('[data-rectag]');
@@ -2396,6 +2495,7 @@ document.addEventListener('click',async e=>{
   const srow=t.closest('[data-source]');
   if(srow){ const [id,sid]=srow.dataset.source.split('|'); return go({v:'source',id,sid}); }
 
+  if(t.closest('#artModeBtn')){ ARTFULL=!ARTFULL; return vArts(here()); }
   if(t.closest('#modeBtn')){ MODE=MODE==='art'?'full':'art'; return render(); }
   if(t.closest('#editBtn')){ EDIT=!EDIT; return render(); }
 
@@ -2403,8 +2503,16 @@ document.addEventListener('click',async e=>{
   if(del){
     e.stopPropagation();
     const c=del.closest('.card');
-    const d=findList(c.dataset.deck), s=d&&d.sections.find(x=>x.name===c.dataset.sect);
-    if(s){ const i=s.cards.findIndex(x=>x.n===c.dataset.card); if(i>-1) s.cards.splice(i,1); save(); render(); }
+    const d=findList(c.dataset.deck);
+    // the tile's heading is a type or colour once grouping is on, so it can't locate the
+    // owning section any more — find the card itself instead
+    if(d){
+      for(const s of d.sections){
+        const i=s.cards.findIndex(x=>x.n===c.dataset.card);
+        if(i>-1){ s.cards.splice(i,1); break; }
+      }
+      save(); render();
+    }
     return;
   }
 
