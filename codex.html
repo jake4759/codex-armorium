@@ -1154,38 +1154,46 @@ function cardTile(c,deckId,sectName){
 }
 
 
-/* ---------- ARTISTS: everyone who painted something you own ----------
-   Built off CACHE rather than a Scryfall query, because the question is about *your*
-   cards and the answer is already in memory once the decks have loaded. Cards Scryfall
-   hasn't returned yet simply don't appear, and the count says so — better than an empty
-   list that looks authoritative.
+/* ---------- ARTISTS: the con lineup, and what you own by each ----------
+   Scoped to CON_ARTISTS, not to every illustrator in your decks. 235 painters is a
+   directory of Magic; the lineup is the list you actually queue in front of.
 
-   A card credited "Phil Foglio & Kaja Foglio" is two artists' work, so it counts for
-   both. Splitting on & and // matches how Scryfall writes collaborations. */
-function artistsOwned(){
-  const map=new Map();                       // artist -> {name, cards:Set, sample}
-  const seen=new Set();
+   The whole lineup shows, including artists you own nothing by — that's still worth
+   knowing before you walk the hall — sorted by how much of yours they painted so the
+   useful ones sit at the top. Counting uses byConArtist() rather than a string compare:
+   a card credited "Phil Foglio & Kaja Foglio" counts for both of them. */
+/* CON_ARTISTS carries both spellings of the people Scryfall credits inconsistently, so
+   the *queries* catch either. A list of humans must not: "Dan Scott" and "Dan Murayama
+   Scott" are one person to queue in front of, and showing them twice — once with none of
+   your cards — reads as a bug. */
+const ARTIST_ALIAS={'Dan Murayama Scott':'Dan Scott'};
+const canonArtist=a=>ARTIST_ALIAS[a]||a;
+
+function conArtists(){
+  const map=new Map();
+  CON_ARTISTS.forEach(a=>{
+    const n=canonArtist(a);
+    if(!map.has(n)) map.set(n,{name:n,cards:new Set(),sample:null});
+  });
   let known=0, unknown=0;
   allOwnedNames().forEach(n=>{
     const c=CACHE.get(key(n));
     if(!c||!c.artist){ unknown++; return; }
     known++;
-    c.artist.split(/\s*(?:&|\/\/|and\s)\s*/).map(s=>s.trim()).filter(Boolean).forEach(a=>{
-      let e=map.get(a);
-      if(!e){ e={name:a,cards:new Set(),sample:null}; map.set(a,e); }
+    (byConArtist(c.artist)||[]).forEach(a=>{
+      const e=map.get(canonArtist(a)); if(!e) return;
       e.cards.add(c.name);
       if(!e.sample) e.sample=artOf(c);
     });
   });
   const list=[...map.values()].sort((x,y)=>y.cards.size-x.cards.size||x.name.localeCompare(y.name));
-  return {list, known, unknown};
+  return {list, known, unknown, withCards:list.filter(a=>a.cards.size).length};
 }
 
 function vArtists(){
   _repaint=()=>{ if(here().v==='artists') vArtists(); };
-  const {list,known,unknown}=artistsOwned();
-  setBar('Artists', list.length?list.length+' across your cards':'Loading your cards…',
-         {tools:true, placeholder:'Filter artists…'});
+  const {list,unknown,withCards}=conArtists();
+  setBar('Artists', list.length+' at the con', {tools:true, placeholder:'Filter artists…'});
   const chipbar=document.getElementById('chips');
   if(chipbar.dataset.for!=='artists'){ chipbar.innerHTML=''; chipbar.dataset.for='artists'; }
   const q=document.getElementById('search').value.toLowerCase().trim();
@@ -1193,20 +1201,20 @@ function vArtists(){
 
   document.getElementById('main').innerHTML=`
     <div class="totalbar">
-      <div><div class="l">Illustrators in your decks</div><div class="v">${list.length||'—'}</div></div>
-      <div style="text-align:right"><div class="l">${known} cards read${unknown?` · ${unknown} still loading`:''}</div>
+      <div><div class="l">Artists at the con</div><div class="v">${list.length}</div></div>
+      <div style="text-align:right"><div class="l">${withCards} you own cards by${unknown?` · ${unknown} still loading`:''}</div>
       <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
-        <button class="btn sm" id="conBtn">Con signing ›</button></div></div>
+        <button class="btn sm" id="conBtn">Signing list ›</button></div></div>
     </div>
-    ${list.length?'':'<div class="empty"><span class="spin"></span>Reading your cards…</div>'}
     <div class="rows">${shown.map(a=>`
       <button class="lrow" data-artistgo="${esc(a.name)}">
         <div class="por" style="${a.sample?`background-image:url('${a.sample}')`:''}"></div>
         <div class="body">
           <h3>${esc(a.name)}</h3>
-          <div class="m">${a.cards.size} card${a.cards.size===1?'':'s'} of yours</div>
+          <div class="m" ${a.cards.size?'':'style="opacity:.55"'}>${
+            a.cards.size?`${a.cards.size} card${a.cards.size===1?'':'s'} of yours`:'none of yours yet'}</div>
         </div><div class="chev">›</div></button>`).join('')}</div>
-    ${list.length&&!shown.length?'<div class="empty">No artist matches that.</div>':''}`;
+    ${shown.length?'':'<div class="empty">No artist at the con matches that.</div>'}`;
   loadCards(allOwnedNames());
 }
 
