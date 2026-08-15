@@ -392,7 +392,7 @@
   <button class="tab" data-tab="decks"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="10" height="14" rx="2.2"/><path d="M16.5 6.6a2 2 0 0 1 2 2v8.8a2 2 0 0 1-2 2"/><path d="M20 8.6v6.8"/></svg></span>Decks</button>
   <button class="tab" data-tab="wishes"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 4.6h10.4v14.8L12 15.9l-5.2 3.5z"/><path d="M9.6 9.2h4.8"/></svg></span>Wishlist</button>
   <button class="tab" data-tab="moves"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.6h13"/><path d="m13.8 5.2 3.4 3.4-3.4 3.4"/><path d="M20 15.4H7"/><path d="m10.2 12 -3.4 3.4 3.4 3.4"/></svg></span>Devoured</button>
-  <button class="tab" data-tab="signing"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.4h16"/><path d="M15.3 4.9a1.9 1.9 0 0 1 2.7 2.7l-8.2 8.2-3.5.8.8-3.5z"/></svg></span>Signing</button>
+  <button class="tab" data-tab="artists"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.4h16"/><path d="M15.3 4.9a1.9 1.9 0 0 1 2.7 2.7l-8.2 8.2-3.5.8.8-3.5z"/></svg></span>Artists</button>
 </nav>
 
 <div class="modal" id="modal">
@@ -843,12 +843,14 @@ function render(){
   const y=scroller().scrollTop;
   const r=here();
   const top={home:'home',decks:'decks',deck:'decks',wishes:'wishes',wish:'wishes',
-             moves:'moves',move:'moves',source:'moves',signing:'signing',arts:'signing',
+             moves:'moves',move:'moves',source:'moves',
+             artists:'artists',signing:'artists',arts:'artists',
              add:(findWish(r.id)?'wishes':'decks')}[r.v];
   document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===top));
   document.body.classList.toggle('editing',EDIT && (r.v==='deck'||r.v==='wish'));
   ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,add:vAdd,
-    moves:vMoves,move:vMove,source:vSource,signing:vSigning,arts:vArts}[r.v]||vHome)(r);
+    moves:vMoves,move:vMove,source:vSource,
+    artists:vArtists,signing:vSigning,arts:vArts}[r.v]||vHome)(r);
   scroller().scrollTop=y;
 }
 
@@ -1151,6 +1153,62 @@ function cardTile(c,deckId,sectName){
     </div></div>`;
 }
 
+
+/* ---------- ARTISTS: everyone who painted something you own ----------
+   Built off CACHE rather than a Scryfall query, because the question is about *your*
+   cards and the answer is already in memory once the decks have loaded. Cards Scryfall
+   hasn't returned yet simply don't appear, and the count says so — better than an empty
+   list that looks authoritative.
+
+   A card credited "Phil Foglio & Kaja Foglio" is two artists' work, so it counts for
+   both. Splitting on & and // matches how Scryfall writes collaborations. */
+function artistsOwned(){
+  const map=new Map();                       // artist -> {name, cards:Set, sample}
+  const seen=new Set();
+  let known=0, unknown=0;
+  allOwnedNames().forEach(n=>{
+    const c=CACHE.get(key(n));
+    if(!c||!c.artist){ unknown++; return; }
+    known++;
+    c.artist.split(/\s*(?:&|\/\/|and\s)\s*/).map(s=>s.trim()).filter(Boolean).forEach(a=>{
+      let e=map.get(a);
+      if(!e){ e={name:a,cards:new Set(),sample:null}; map.set(a,e); }
+      e.cards.add(c.name);
+      if(!e.sample) e.sample=artOf(c);
+    });
+  });
+  const list=[...map.values()].sort((x,y)=>y.cards.size-x.cards.size||x.name.localeCompare(y.name));
+  return {list, known, unknown};
+}
+
+function vArtists(){
+  _repaint=()=>{ if(here().v==='artists') vArtists(); };
+  const {list,known,unknown}=artistsOwned();
+  setBar('Artists', list.length?list.length+' across your cards':'Loading your cards…',
+         {tools:true, placeholder:'Filter artists…'});
+  const chipbar=document.getElementById('chips');
+  if(chipbar.dataset.for!=='artists'){ chipbar.innerHTML=''; chipbar.dataset.for='artists'; }
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  const shown=q?list.filter(a=>a.name.toLowerCase().includes(q)):list;
+
+  document.getElementById('main').innerHTML=`
+    <div class="totalbar">
+      <div><div class="l">Illustrators in your decks</div><div class="v">${list.length||'—'}</div></div>
+      <div style="text-align:right"><div class="l">${known} cards read${unknown?` · ${unknown} still loading`:''}</div>
+      <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
+        <button class="btn sm" id="conBtn">Con signing ›</button></div></div>
+    </div>
+    ${list.length?'':'<div class="empty"><span class="spin"></span>Reading your cards…</div>'}
+    <div class="rows">${shown.map(a=>`
+      <button class="lrow" data-artistgo="${esc(a.name)}">
+        <div class="por" style="${a.sample?`background-image:url('${a.sample}')`:''}"></div>
+        <div class="body">
+          <h3>${esc(a.name)}</h3>
+          <div class="m">${a.cards.size} card${a.cards.size===1?'':'s'} of yours</div>
+        </div><div class="chev">›</div></button>`).join('')}</div>
+    ${list.length&&!shown.length?'<div class="empty">No artist matches that.</div>':''}`;
+  loadCards(allOwnedNames());
+}
 
 /* ---------- SIGNING: scan the cards you own against the con lineup ---------- */
 let SCAN=null, SCANNING=false, SCANMSG='', ARTFILTER='';
@@ -1873,6 +1931,7 @@ document.addEventListener('click',async e=>{
 
   // must clear COOLDOWN too, or lookupOne bails instantly and this button does nothing
   if(t.closest('#cardRetry')){ const n=sheet.querySelector('h3').textContent; OFFLINE=false; COOLDOWN=0; LAST_NETFAIL=false; CACHE.delete(key(n)); return showCard(n,SHEET_DECK); }
+  if(t.closest('#conBtn')) return go({v:'signing'});
   if(t.closest('#scanBtn')||t.closest('#rescanBtn')){ SCAN=null; runScan(); return vSigning(); }
   const tick=t.closest('[data-tick]');
   if(tick){
