@@ -161,6 +161,7 @@
   .lrow .body{flex:1;min-width:0;padding:14px 34px 14px 0}
   .lrow h3{font-family:var(--f-display);font-weight:400;font-size:17px;color:var(--text);line-height:1.25}
   .lrow .m{font-size:12.5px;color:var(--muted);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lrow h3 .dicon{margin-right:7px;font-size:15px;line-height:1;vertical-align:baseline}
   .lrow .chev{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--gold);opacity:.5;font-size:20px}
   .lrow .val{font-family:var(--f-num);font-size:13px;color:var(--green);margin-top:4px;
              font-weight:600;font-variant-numeric:tabular-nums}
@@ -519,7 +520,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.15-14 · search';
+const BUILD='2026.08.16-01 · deck settings';
 
 const T={LAND:'Land',MANA:'Mana',ENGINE:'Engine',COMBO:'Combo',CLONE:'Clone',TUTOR:'Tutor',INT:'Interaction',REC:'Recursion',ADD:'Added'};
 
@@ -1049,6 +1050,19 @@ function back(){
    5. RENDER
    ========================================================== */
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+/* Trim to `n` visible glyphs. Not `.slice()`, and not spread-then-slice either: one emoji
+   is often several code points — 👨‍👩‍👧 is five — and cutting inside the sequence leaves a
+   man and a dangling joiner on screen. Segmenter is the only thing that counts what the
+   eye counts; the spread is the fallback for Safari older than 16.4. */
+function capGlyphs(s,n){
+  s=String(s||'').trim();
+  if(!s) return '';
+  if(typeof Intl!=='undefined' && Intl.Segmenter)
+    return [...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(s)]
+             .slice(0,n).map(x=>x.segment).join('');
+  return [...s].slice(0,n).join('');
+}
 /* Partners, Backgrounds and Doctor's companions mean a deck can legally have two
    commanders, so this is a list. `commander` stays in sync as the first of them —
    seeded decks were written with it, backups contain it, and keeping it valid means
@@ -1064,6 +1078,23 @@ function setDeckCommanders(d,arr){
 }
 const isCommander=(d,name)=>deckCommanders(d).some(n=>key(n)===key(name));
 const commanderLabel=d=>deckCommanders(d).join(' + ');
+
+/* A deck's banner art, in order of who should win: a cover you picked deliberately, then
+   the commander (which is all this used to be), then the first card in the deck that has
+   any art at all — so a deck created before it has a commander isn't a blank slab.
+   Same fallback chain as `wishCover`; decks and wishlists stay interchangeable. */
+function deckCover(d){
+  if(d.cover&&d.cover.art) return d.cover.art;
+  const a=deckCommanders(d).map(n=>artOf(CACHE.get(key(n)))).find(Boolean);
+  if(a) return a;
+  for(const s of d.sections) for(const c of s.cards){
+    const x=artOf(CACHE.get(key(c.n))); if(x) return x;
+  }
+  return null;
+}
+/* Prefix for anywhere the deck's name is written as plain text (the app bar uses
+   textContent, so the glyph can't be markup there). */
+const deckLabel=d=>(d.icon?d.icon+' ':'')+d.name;
 
 const findDeck=id=>STATE.decks.find(d=>d.id===id);
 const findWish=id=>(STATE.wishlists||[]).find(w=>w.id===id);
@@ -1156,11 +1187,11 @@ function vDecks(){
   document.getElementById('main').innerHTML=`<div class="rows">${
     STATE.decks.map(d=>{
       const t=totalOfEntries(listEntries(d));
-      const art=deckCommanders(d).map(n=>artOf(CACHE.get(key(n)))).find(Boolean);
+      const art=deckCover(d);
       return `<button class="lrow" data-deck="${esc(d.id)}">
         <div class="por" style="${art?`background-image:url('${art}')`:''}"></div>
         <div class="body">
-          <h3>${esc(d.name)}</h3>
+          <h3>${d.icon?`<span class="dicon">${esc(d.icon)}</span>`:''}${esc(d.name)}</h3>
           <div class="m">${deckCommanders(d).length?esc(commanderLabel(d)):'<span style="opacity:.6">No commander yet</span>'} · ${countEntries(d)} cards</div>
           <div class="val">${t.known?money(t.sum):'—'}${t.unknown?` <span style="color:var(--bone-dim)">(${t.unknown} unpriced)</span>`:''}</div>
         </div><div class="chev">›</div></button>`;
@@ -1174,7 +1205,7 @@ function vDeck(r){
   _repaint=()=>{ if(here().v==='deck') vDeck(here()); };
   const d=findDeck(r.id); if(!d) return back();
   const allNames=d.sections.flatMap(s=>s.cards.map(c=>c.n));
-  setBar(d.name,d.sub||commanderLabel(d)||'No commander set',{tools:true,action:'＋',searchFor:'deck:'+d.id});
+  setBar(deckLabel(d),d.sub||commanderLabel(d)||'No commander set',{tools:true,action:'＋',searchFor:'deck:'+d.id});
 
   // chips
   const tags=[...new Set(d.sections.flatMap(s=>s.cards.map(c=>c.tag)).filter(Boolean))].sort();
@@ -1205,6 +1236,7 @@ function vDeck(r){
           <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
           <button class="btn sm" id="viewBtn">⊞ ${esc(GROUPS[VIEW().group]||'Type')}</button>
           <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
+          <button class="btn sm" id="deckEdit">Deck…</button>
           <button class="btn sm" id="recBtn">EDHREC ›</button>
         </div>
       </div>
@@ -2640,6 +2672,25 @@ function sheetAddDeck(){
     <button class="btn primary wide" id="ndSave">Create Deck</button>`);
 }
 
+/* The deck twin of sheetEditWish. Cover is a card name rather than an art picker because
+   that's the one input that works with no cards loaded and no network round trip until
+   Save — and it's the same box the wishlist already trained you on. */
+function sheetEditDeck(id){
+  const d=findDeck(id); if(!d) return;
+  openSheet(`<h3>${esc(d.name)}</h3><div class="tl">Deck settings</div>
+    <label for="edName">Deck name</label><input class="inp" id="edName" value="${esc(d.name)}">
+    <label for="edSub">Subtitle</label><input class="inp" id="edSub" value="${esc(d.sub||'')}"
+           placeholder="Blank shows the commander instead">
+    <label for="edIcon">Icon</label><input class="inp" id="edIcon" value="${esc(d.icon||'')}"
+           placeholder="An emoji, e.g. 🐉" autocapitalize="off" autocomplete="off">
+    <label for="edCover">Cover card</label>
+    <input class="inp" id="edCover" value="${esc(d.cover&&d.cover.name?d.cover.name:'')}"
+           placeholder="Card name — blank falls back to the commander" autocapitalize="words">
+    <div class="err" id="edErr"></div>
+    <button class="btn primary wide" id="edSave">Save</button>
+    <button class="btn wide" id="edDel" data-arm="0" style="margin-top:10px;border-color:rgba(198,58,58,.6);color:#ff8a8a">Delete this deck</button>`);
+}
+
 function sheetAddWish(){
   openSheet(`<h3>New Wishlist</h3><div class="tl">A list of cards you're hunting</div>
     <label for="nwName">List name</label><input class="inp" id="nwName" placeholder="e.g. Cards to buy">
@@ -2780,6 +2831,7 @@ document.addEventListener('click',async e=>{
   const drow=t.closest('[data-deck]:not(.card)'); if(drow) return go({v:'deck',id:drow.dataset.deck});
   const wrow=t.closest('[data-wish]'); if(wrow) return go({v:'wish',id:wrow.dataset.wish});
   if(t.closest('#wishEdit')) return sheetEditWish(here().id);
+  if(t.closest('#deckEdit')) return sheetEditDeck(here().id);
   // artist heading in Signing -> that illustrator's whole body of work
   const ago=t.closest('[data-artistgo]');
   if(ago) return go({v:'arts',subject:ago.dataset.artistgo,mode:'artist',artist:ago.dataset.artistgo,deck:''});
@@ -3028,6 +3080,36 @@ document.addEventListener('click',async e=>{
     STATE.wishlists=(STATE.wishlists||[]).filter(w=>w.id!==id);
     if(STATE.art) delete STATE.art[id];          // its art picks go with it
     save(); closeSheet(); return go({v:'wishes'},true);
+  }
+
+  if(t.closest('#edSave')){
+    const d=findDeck(here().id); if(!d) return;
+    const name=document.getElementById('edName').value.trim();
+    const err=document.getElementById('edErr');
+    if(!name){ err.textContent='Give the deck a name.'; return; }
+    const cn=document.getElementById('edCover').value.trim();
+    if(!cn) d.cover=null;
+    else if(!d.cover || d.cover.name!==cn){      // unchanged name — don't spend a request
+      err.textContent='Looking up the cover card…';
+      const c=await lookupOne(cn,5000);
+      if(!c && !LAST_NETFAIL){ err.textContent='Scryfall could not find "'+cn+'". Check the spelling.'; return; }
+      if(c) d.cover=coverOf(c);
+      else { err.textContent='Couldn\'t reach Scryfall — the name was saved, the cover was not.'; }
+    }
+    d.name=name;
+    d.sub=document.getElementById('edSub').value.trim();
+    d.icon=capGlyphs(document.getElementById('edIcon').value,2);
+    save(); closeSheet(); return render();
+  }
+
+  // two taps to delete, same as a wishlist — a 100-card deck is real work and there's no undo
+  const ddel=t.closest('#edDel');
+  if(ddel){
+    if(ddel.dataset.arm!=='1'){ ddel.dataset.arm='1'; ddel.textContent='Tap again to delete for good'; return; }
+    const id=here().id;
+    STATE.decks=STATE.decks.filter(d=>d.id!==id);
+    if(STATE.art) delete STATE.art[id];          // its per-deck art picks go with it
+    save(); closeSheet(); return go({v:'decks'},true);
   }
 
   if(t.closest('#acSave')){
