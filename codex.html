@@ -897,7 +897,7 @@ const countEntries=l=>listEntries(l).reduce((n,e)=>n+entryQty(e),0);
 const TYPE_ORDER=['Commander','Creature','Planeswalker','Instant','Sorcery','Artifact',
                   'Enchantment','Battle','Land','Unknown'];
 function cardType(name,list){
-  if(list&&list.commander&&key(list.commander)===key(name)) return 'Commander';
+  if(list&&isCommander(list,name)) return 'Commander';
   const c=CACHE.get(key(name));
   const t=(c&&c.type_line)||'';
   if(!t) return 'Unknown';
@@ -1022,6 +1022,22 @@ function back(){
    5. RENDER
    ========================================================== */
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+/* Partners, Backgrounds and Doctor's companions mean a deck can legally have two
+   commanders, so this is a list. `commander` stays in sync as the first of them —
+   seeded decks were written with it, backups contain it, and keeping it valid means
+   nothing that reads a single name had to change. */
+function deckCommanders(d){
+  if(!d) return [];
+  if(Array.isArray(d.commanders)) return d.commanders.filter(Boolean);
+  return d.commander?[d.commander]:[];
+}
+function setDeckCommanders(d,arr){
+  d.commanders=arr.filter(Boolean);
+  d.commander=d.commanders[0]||'';
+}
+const isCommander=(d,name)=>deckCommanders(d).some(n=>key(n)===key(name));
+const commanderLabel=d=>deckCommanders(d).join(' + ');
+
 const findDeck=id=>STATE.decks.find(d=>d.id===id);
 const findWish=id=>(STATE.wishlists||[]).find(w=>w.id===id);
 /* Decks and wishlists share a shape, so anything that just needs "the list with this
@@ -1092,7 +1108,7 @@ function vHome(){
         <p>Every card you own with a printing by an artist at the con, grouped by artist. Tick them off as they're signed.</p>
       </button>
     </div>`;
-  loadCards(STATE.decks.map(d=>d.commander));
+  loadCards(STATE.decks.flatMap(deckCommanders));
 }
 function statTiles(){
   const all=STATE.decks.flatMap(listEntries);
@@ -1112,17 +1128,18 @@ function vDecks(){
   setBar('Decks',STATE.decks.length+' in archive',{action:'＋'});
   document.getElementById('main').innerHTML=`<div class="rows">${
     STATE.decks.map(d=>{
-      const t=totalOfEntries(listEntries(d)); const art=artOf(CACHE.get(key(d.commander)));
+      const t=totalOfEntries(listEntries(d));
+      const art=deckCommanders(d).map(n=>artOf(CACHE.get(key(n)))).find(Boolean);
       return `<button class="lrow" data-deck="${esc(d.id)}">
         <div class="por" style="${art?`background-image:url('${art}')`:''}"></div>
         <div class="body">
           <h3>${esc(d.name)}</h3>
-          <div class="m">${d.commander?esc(d.commander):'<span style="opacity:.6">No commander yet</span>'} · ${countEntries(d)} cards</div>
+          <div class="m">${deckCommanders(d).length?esc(commanderLabel(d)):'<span style="opacity:.6">No commander yet</span>'} · ${countEntries(d)} cards</div>
           <div class="val">${t.known?money(t.sum):'—'}${t.unknown?` <span style="color:var(--bone-dim)">(${t.unknown} unpriced)</span>`:''}</div>
         </div><div class="chev">›</div></button>`;
     }).join('')}</div>
     ${STATE.decks.length?'':'<div class="empty">No decks yet.<br>Tap ＋ to add one.</div>'}`;
-  loadCards(STATE.decks.map(d=>d.commander));
+  loadCards(STATE.decks.flatMap(deckCommanders));
 }
 
 /* ---------- one deck ---------- */
@@ -1130,7 +1147,7 @@ function vDeck(r){
   _repaint=()=>{ if(here().v==='deck') vDeck(here()); };
   const d=findDeck(r.id); if(!d) return back();
   const allNames=d.sections.flatMap(s=>s.cards.map(c=>c.n));
-  setBar(d.name,d.sub||d.commander||'No commander set',{tools:true,action:'＋',searchFor:'deck:'+d.id});
+  setBar(d.name,d.sub||commanderLabel(d)||'No commander set',{tools:true,action:'＋',searchFor:'deck:'+d.id});
 
   // chips
   const tags=[...new Set(d.sections.flatMap(s=>s.cards.map(c=>c.tag)).filter(Boolean))].sort();
@@ -1490,6 +1507,17 @@ function edhrecSlug(name){
     .trim().replace(/\s+/g,'-').replace(/-+/g,'-');
 }
 
+/* A partner pair has its own EDHREC page under both slugs joined, ordered alphabetically
+   — thrasios-triton-hero-tymna-the-weaver. That page is the useful one, since the whole
+   point of a pair is what they do together, so it's tried first and the single commander
+   is the fallback for pairings EDHREC has no page for. */
+function recSlugs(d){
+  const s=deckCommanders(d).map(edhrecSlug).filter(Boolean);
+  if(!s.length) return [];
+  if(s.length===1) return [s[0]];
+  return [s.slice().sort().join('-'), s[0]];
+}
+
 async function loadRec(slug){
   let rec=REC_SETS.get(slug);
   if(rec&&rec.done) return rec;
@@ -1519,22 +1547,27 @@ async function loadRec(slug){
 function vRec(r){
   _repaint=()=>{ if(here().v==='rec') vRec(here()); };
   const d=findDeck(r.id); if(!d) return back();
-  setBar('Recommended', d.commander||'No commander set',
+  setBar('Recommended', commanderLabel(d)||'No commander set',
          {tools:true, placeholder:'Filter cards…', searchFor:'rec:'+r.id});
   const chipbar=document.getElementById('chips');
   if(chipbar.dataset.for!=='rec:'+r.id){ chipbar.innerHTML=''; chipbar.dataset.for='rec:'+r.id; }
   const m=document.getElementById('main');
 
-  if(!d.commander){
+  if(!deckCommanders(d).length){
     m.innerHTML=`<div class="empty">This deck has no commander yet.<br><br>
       Tap a legendary creature in the deck and choose <b style="color:var(--gold)">Set as commander</b> —
       EDHREC's recommendations follow from it.</div>`;
     return;
   }
 
-  const slug=edhrecSlug(d.commander);
+  // try the pair's own page first, fall back to the first commander alone
+  const slugs=recSlugs(d);
+  const slug=slugs.find(s=>{ const x=REC_SETS.get(s); return x&&x.done&&!x.missing&&x.lists.length; })||slugs[0];
   const rec=REC_SETS.get(slug);
-  if(!rec){ loadRec(slug).then(()=>{ if(here().v==='rec'&&here().id===r.id) vRec(here()); }); }
+  if(!rec||(rec.done&&rec.missing&&slugs.length>1)){
+    const next=!rec?slug:slugs.find(s=>!REC_SETS.get(s));
+    if(next) loadRec(next).then(()=>{ if(here().v==='rec'&&here().id===r.id) vRec(here()); });
+  }
 
   const q=document.getElementById('search').value.toLowerCase().trim();
   const inDeck=new Set(listEntries(d).map(e=>key(e.n)));
@@ -1558,7 +1591,7 @@ function vRec(r){
   };
 
   const body = !rec ? '<div class="empty"><span class="spin"></span>Asking EDHREC…</div>'
-    : rec.missing ? `<div class="empty">EDHREC has no page for <b>${esc(d.commander)}</b>.<br>It may be too new, or not a legal commander.</div>`
+    : rec.missing ? `<div class="empty">EDHREC has no page for <b>${esc(commanderLabel(d))}</b>.<br>It may be too new, or not a legal commander.</div>`
     : rec.failed ? '<div class="empty">Couldn\'t reach EDHREC.<br>Check your connection and go back in.</div>'
     : !lists.length ? '<div class="empty">Nothing matches that filter.</div>'
     : lists.map(l=>`<div class="sec">${esc(l.header)}<span>${l.cards.length}</span></div>
@@ -1567,13 +1600,13 @@ function vRec(r){
   const total=lists.reduce((n,l)=>n+l.cards.length,0);
   m.innerHTML=`
     <div class="totalbar">
-      <div><div class="l">EDHREC · ${esc(d.commander.split(',')[0])}</div>
+      <div><div class="l">EDHREC · ${esc(deckCommanders(d).map(n=>n.split(',')[0]).join(' + '))}</div>
            <div class="v" style="font-size:20px">${esc(d.name)}</div></div>
       <div style="text-align:right"><div class="l">${total} recommendation${total===1?'':'s'}</div>
       <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
         <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button></div></div>
     </div>
-    <div class="note">The percentage is how many ${esc(d.commander.split(',')[0])} decks run the card. Tap one to add it to <b style="color:var(--gold)">${esc(d.name)}</b>.</div>
+    <div class="note">The percentage is how many ${esc(deckCommanders(d).map(n=>n.split(',')[0]).join(' + '))} decks run the card. Tap one to add it to <b style="color:var(--gold)">${esc(d.name)}</b>.</div>
     ${body}`;
   if(total) loadCards(lists.flatMap(l=>l.cards.map(c=>c.n)));
 }
@@ -2228,11 +2261,14 @@ function wishBar(c,deckId){
   const list=deckId?findList(deckId):null;
   const entry=list?listEntries(list).find(e=>e.n===c.name):null;
   const deck=deckId?findDeck(deckId):null;
-  const isCmd=deck&&deck.commander&&key(deck.commander)===key(c.name);
+  const isCmd=deck&&isCommander(deck,c.name);
+  const already=deck?deckCommanders(deck).length:0;
   const cmdBtn = deck&&canBeCommander(c)
     ? `<button class="artsbtn" data-setcmd="${esc(c.name)}" data-setcmddeck="${esc(deckId)}"
         ${isCmd?'style="border-color:var(--gold);background:var(--gold-glow)"':''}
-        >♛ ${isCmd?'Commander of '+esc(deck.name):'Set as commander'}</button>`
+        >♛ ${isCmd ? 'Commander · tap to remove'
+                   : already ? 'Add as commander'
+                   : 'Set as commander'}</button>`
     : '';
   return `<div class="artsbar">${cmdBtn}${
     /* opened from a list, so the copy in that list can be edited here — printing,
@@ -2491,9 +2527,10 @@ document.addEventListener('click',async e=>{
   if(sc){
     const d=findDeck(sc.dataset.setcmddeck); if(!d) return;
     const name=sc.dataset.setcmd;
-    // tapping the current commander clears it, so a mistake is one tap to undo
-    d.commander = (d.commander&&key(d.commander)===key(name)) ? '' : name;
-    REC_SETS.clear();                       // recommendations follow the commander
+    // tapping one that's already a commander removes it, so a mistake is one tap to undo
+    const cur=deckCommanders(d);
+    setDeckCommanders(d, isCommander(d,name) ? cur.filter(n=>key(n)!==key(name)) : cur.concat(name));
+    REC_SETS.clear();                       // recommendations follow the commanders
     save(); closeSheet(); return render();
   }
   const ec=t.closest('[data-editcopy]');
