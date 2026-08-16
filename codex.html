@@ -370,6 +370,23 @@
   .pricebar span{display:block;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
   .pricebar b{font-family:var(--f-num);font-size:14px;color:var(--green);font-weight:600;
               font-variant-numeric:tabular-nums}
+  /* every printing and what it costs, the way a price site lays it out. Columns are
+     Normal / Foil / EUR because those are the figures Scryfall publishes — TCGplayer's
+     low and mid need their own API and a server to hold the key. */
+  .ptab{margin:6px 0 4px;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .ptab .ph,.ptab .pr{display:grid;grid-template-columns:1fr 74px 74px;gap:8px;
+                      align-items:center;padding:8px 11px}
+  .ptab .ph{background:var(--surface2);font-size:9.5px;color:var(--muted);
+            text-transform:uppercase;letter-spacing:.09em}
+  .ptab .pr{border-top:1px solid var(--line);width:100%;text-align:left;background:none}
+  .ptab .pr:active{background:var(--surface2)}
+  .ptab .pr.on{background:var(--gold-glow)}
+  .ptab .st{font-size:12px;color:var(--text);line-height:1.3;min-width:0}
+  .ptab .st i{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:1px}
+  .ptab .pv{font-family:var(--f-num);font-size:12px;color:var(--green);text-align:right;
+            font-variant-numeric:tabular-nums}
+  .ptab .pv.dim{color:var(--muted);opacity:.5}
+  .ptab .pv.eur{color:var(--muted)}
 
   /* ---------- forms ---------- */
   label{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
@@ -499,8 +516,10 @@
    1. DEFAULT DATA
    ========================================================== */
 /* Shown in Settings. When a phone insists a feature isn't there and the server says it
-   is, this is how you tell whether the device is running a stale cached copy. */
-const BUILD='2026.08.15-8';
+   is, this is how you tell whether the device is running a stale cached copy.
+   BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
+   it reads as confirmation that the device is current when it isn't. */
+const BUILD='2026.08.15-14 · search';
 
 const T={LAND:'Land',MANA:'Mana',ENGINE:'Engine',COMBO:'Combo',CLONE:'Clone',TUTOR:'Tutor',INT:'Interaction',REC:'Recursion',ADD:'Added'};
 
@@ -1397,18 +1416,24 @@ async function runAddSearch(term){
   if(q.length<2){ ADD_STATE='idle'; ADD_HITS=[]; if(here().v==='add') vAdd(here()); return; }
   ADD_STATE='busy'; if(here().v==='add') vAdd(here());
   const ctl=new AbortController(); ADD_ABORT=ctl;
-  const query=q.split(/\s+/).map(w=>'name:'+JSON.stringify(w)).join(' ');
-  try{
+  const attempt=async loose=>{
+    const query=q.split(/\s+/).map(w=>loose?looseName(w):'name:'+JSON.stringify(w)).filter(Boolean).join(' ');
+    if(!query) return {none:true};
     const r=await fetch('https://api.scryfall.com/cards/search?unique=cards&order=name&q='+encodeURIComponent(query),
                         {signal:ctl.signal});
+    if(r.status===404) return {none:true};
+    if(!r.ok) return {err:true};
+    return {json:await r.json()};
+  };
+  try{
+    let res=await attempt(false);
     if(ADD_Q!==q) return;                       // a later keystroke already owns the view
-    if(r.status===404){ ADD_HITS=[]; ADD_STATE='none'; }   // Scryfall's "no matches"
-    else if(!r.ok){ ADD_STATE='err'; }
+    if(res.none){ res=await attempt(true); if(ADD_Q!==q) return; }   // apostrophe fallback
+    if(res.err){ ADD_STATE='err'; }
+    else if(res.none){ ADD_HITS=[]; ADD_STATE='none'; }
     else{
-      const j=await r.json();
-      if(ADD_Q!==q) return;
       EVER_OK=true;
-      ADD_HITS=(j.data||[]).slice(0,60);
+      ADD_HITS=(res.json.data||[]).slice(0,60);
       ADD_HITS.forEach(c=>CACHE.set(key(c.name),c));   // pricing and art, already paid for
       ADD_STATE='ok';
     }
@@ -1508,13 +1533,23 @@ let SRCH_TIMER=null, SRCH_ABORT=null, SRCH_Q='', SRCH_HITS=[], SRCH_STATE='idle'
 const SORTS_SCRY={name:'Name',usd:'Price',edhrec:'Popularity',released:'Newest',cmc:'Mana value'};
 let SF={sort:'name', type:'', oracle:'', colors:'', legal:false, unique:'cards'};
 
-function scryQuery(raw){
+/* Scryfall's name: is a literal substring, so "yshtola" finds nothing while the card is
+   filed under Y'shtola. Rather than make people type punctuation they can't easily reach
+   on a phone keyboard, the fallback rebuilds each word as a regex that tolerates a
+   non-letter between any two characters — which also turns "solring" into Sol Ring. It's
+   only used when the exact search comes back empty, so ordinary searches stay precise. */
+const looseName=w=>{
+  const s=w.replace(/[^a-z0-9]/gi,'');
+  return s?'name:/'+s.split('').join('[^a-z]?')+'/':'';
+};
+
+function scryQuery(raw,loose){
   const q=(raw||'').trim();
   const parts=[];
   // operators, comparisons or a quoted phrase mean the user is writing Scryfall directly
   if(q){
     if(/[:<>="]/.test(q)) parts.push(q);
-    else parts.push(q.split(/\s+/).map(w=>'name:'+JSON.stringify(w)).join(' '));
+    else parts.push(q.split(/\s+/).map(w=>loose?looseName(w):'name:'+JSON.stringify(w)).filter(Boolean).join(' '));
   }
   if(SF.type)   parts.push(SF.type.split(/\s*,\s*/).filter(Boolean).map(t=>'t:'+JSON.stringify(t)).join(' '));
   if(SF.oracle) parts.push('o:'+JSON.stringify(SF.oracle));
@@ -1525,30 +1560,38 @@ function scryQuery(raw){
 const sfActive=()=>!!(SF.type||SF.oracle||SF.colors||SF.legal);
 
 async function runSearch(term){
-  const q=scryQuery(term);
-  SRCH_Q=q;
+  const raw=(term||'').trim();
+  SRCH_Q=raw;
   if(SRCH_ABORT){ SRCH_ABORT.abort(); SRCH_ABORT=null; }
-  if(!q){ SRCH_STATE='idle'; SRCH_HITS=[]; if(here().v==='search') vSearch(); return; }
+  if(!scryQuery(raw)){ SRCH_STATE='idle'; SRCH_HITS=[]; if(here().v==='search') vSearch(); return; }
   SRCH_STATE='busy'; if(here().v==='search') vSearch();
   const ctl=new AbortController(); SRCH_ABORT=ctl;
+
+  const attempt=async loose=>{
+    const q=scryQuery(raw,loose); if(!q) return null;
+    const r=await fetch('https://api.scryfall.com/cards/search?unique='+SF.unique
+      +'&order='+SF.sort+'&q='+encodeURIComponent(q),{signal:ctl.signal});
+    if(r.status===404) return {none:true};
+    if(!r.ok) return {err:true};
+    return {json:await r.json()};
+  };
+
   try{
-    const url='https://api.scryfall.com/cards/search?unique='+SF.unique
-      +'&order='+SF.sort+'&q='+encodeURIComponent(q);
-    const r=await fetch(url,{signal:ctl.signal});
-    if(SRCH_Q!==q) return;
-    if(r.status===404){ SRCH_HITS=[]; SRCH_STATE='none'; }
-    else if(!r.ok){ SRCH_STATE='err'; }
+    let res=await attempt(false);
+    if(SRCH_Q!==raw) return;
+    // nothing matched literally — the apostrophe fallback, see looseName()
+    if(res&&res.none&&!/[:<>="]/.test(raw)){ res=await attempt(true); if(SRCH_Q!==raw) return; }
+    if(!res||res.err) SRCH_STATE='err';
+    else if(res.none){ SRCH_HITS=[]; SRCH_STATE='none'; }
     else{
-      const j=await r.json();
-      if(SRCH_Q!==q) return;
       EVER_OK=true;
-      SRCH_HITS=(j.data||[]).slice(0,120);
-      SRCH_MORE=Math.max(0,(j.total_cards||0)-SRCH_HITS.length);
+      SRCH_HITS=(res.json.data||[]).slice(0,120);
+      SRCH_MORE=Math.max(0,(res.json.total_cards||0)-SRCH_HITS.length);
       SRCH_HITS.forEach(c=>{ CACHE.set(key(c.name),c); ART_BY_ID.set(c.id,c); });
       SRCH_STATE='ok';
     }
   }catch(e){
-    if(e.name==='AbortError'||SRCH_Q!==q) return;
+    if(e.name==='AbortError'||SRCH_Q!==raw) return;
     SRCH_STATE='err';
   }
   if(here().v==='search') vSearch();
@@ -2440,6 +2483,53 @@ function sheetWishPick(name){
     }).join('')}`);
 }
 
+/* Pricing per printing, which is the question you actually have when a card exists in
+   nine sets. Loaded when the sheet opens rather than with the card, because most sheet
+   opens are "what does this do" and only some are "what does a copy cost".
+
+   Deliberately not LOW/MID/MARKET: Scryfall publishes one market figure per finish. The
+   spread lives behind TCGplayer's API, which needs a key, which needs a server — so the
+   columns here are the ones that are real. */
+const PRINTS=new Map();      // card key -> [printings]
+
+async function fillPriceTable(name,currentId){
+  const el=document.getElementById('pricetable'); if(!el) return;
+  let list=PRINTS.get(key(name));
+  if(!list){
+    try{
+      const r=await fetch('https://api.scryfall.com/cards/search?unique=prints&order=released&dir=desc&q='
+        +encodeURIComponent('!"'+name+'" game:paper'),{signal:sig(12000)});
+      if(!r.ok) throw new Error(r.status);
+      const j=await r.json();
+      list=j.data||[]; PRINTS.set(key(name),list);
+      list.forEach(x=>ART_BY_ID.set(x.id,x));
+      EVER_OK=true;
+    }catch(e){
+      el.innerHTML='<div class="note">Couldn\'t load pricing for the other printings.</div>';
+      return;
+    }
+  }
+  if(!document.getElementById('pricetable')) return;   // sheet closed while we waited
+  const cell=(v,sym,cls)=>`<div class="pv ${v?(cls||''):'dim'}">${v?(sym||'$')+v:'—'}</div>`;
+  el.innerHTML=`
+    <div class="sec" style="margin:20px 0 8px">Pricing<span>${list.length}</span></div>
+    <div class="ptab">
+      <div class="ph"><div>Printing</div><div style="text-align:right">Normal</div>
+           <div style="text-align:right">Foil</div></div>
+      ${list.map(x=>{
+        const p=x.prices||{};
+        return `<button class="pr${x.id===currentId?' on':''}" data-priceid="${esc(x.id)}">
+          <div class="st">${esc(x.set_name||'')}<i>#${esc(x.collector_number||'')}${
+            (x.frame_effects||[]).filter(f=>f!=='legendary').length
+              ? ' · '+esc((x.frame_effects||[]).filter(f=>f!=='legendary').join(' · ')):''}</i></div>
+          ${cell(p.usd)}${cell(p.usd_foil||p.usd_etched)}
+        </button>`;
+      }).join('')}
+    </div>
+    <div class="note" style="margin-top:8px">Market price per printing, from Scryfall.
+      TCGplayer's low and mid aren't in their feed — the button below opens this printing there.</div>`;
+}
+
 function showCardObj(c,deckId){
   if(!c) return;
   const faces=(c.card_faces&&c.card_faces[0].image_uris)?c.card_faces:[c];
@@ -2459,7 +2549,6 @@ function showCardObj(c,deckId){
         <div><span>Normal</span><b>${p.usd?'$'+p.usd:'—'}</b></div>
         <div><span>Foil</span><b>${p.usd_foil?'$'+p.usd_foil:'—'}</b></div>
         ${p.usd_etched?`<div><span>Etched</span><b>$${p.usd_etched}</b></div>`:''}
-        <div><span>EUR</span><b>${p.eur?'€'+p.eur:'—'}</b></div>
       </div>
       <div class="ot">${txt}</div>
       <div class="kv">
@@ -2470,10 +2559,12 @@ function showCardObj(c,deckId){
         <b>RARITY</b> ${esc(c.rarity||'—')}<br>
         <b>SET</b> ${esc(c.set_name||'—')}
       </div>
+      <div id="pricetable"><div class="note" style="margin-top:16px"><span class="spin"></span>Loading every printing's price…</div></div>
       ${c.purchase_uris&&c.purchase_uris.tcgplayer
         ? `<a class="btn primary wide" href="${c.purchase_uris.tcgplayer}" target="_blank" rel="noopener">TCGplayer — low, mid &amp; market</a>`:''}
       ${c.scryfall_uri?`<a class="btn wide" href="${c.scryfall_uri}" target="_blank" rel="noopener" style="margin-top:8px">Open this printing on Scryfall</a>`:''}
     </div>`,'card-detail');
+  fillPriceTable(c.name,c.id);
 }
 
 /* A pick is stored as a scryfall id, so the sheet for a re-tapped card can show that
@@ -2644,6 +2735,9 @@ document.addEventListener('click',async e=>{
   }
   const sid=t.closest('[data-scryid]');
   if(sid) return showCardObj(ART_BY_ID.get(sid.dataset.scryid),'');
+  // a row in the price table jumps the sheet to that printing
+  const pid=t.closest('[data-priceid]');
+  if(pid){ const x=ART_BY_ID.get(pid.dataset.priceid); if(x) return showCardObj(x,here().id||''); return; }
   if(t.closest('#closeX')) return closeSheet();
   const artsGo=t.closest('[data-arts]');
   if(artsGo){
