@@ -43,8 +43,6 @@
     /* the two soft blooms behind the page, and the thin identity stripe at the very top */
     --amb1-rgb:163,51,42; --amb2-rgb:70,115,58;
     --hazard:linear-gradient(90deg,var(--green),var(--gold),var(--red));
-    --hero1:#2e1f18; --hero2:#4a2a1e; --hero3:#3d3320;
-    --hero-text:#f6ecd9; --hero-text-rgb:246,236,217;
 
     --shadow-sm:0 1px 2px rgba(0,0,0,.40), 0 4px 14px rgba(0,0,0,.28);
     --shadow-md:0 6px 18px rgba(0,0,0,.45), 0 18px 44px rgba(0,0,0,.36);
@@ -127,19 +125,8 @@
   .view.live{display:block;animation:fade .24s ease}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-  /* ---------- hero + stats ---------- */
-  .hero{
-    border-radius:var(--r);padding:26px 24px;margin-bottom:14px;position:relative;overflow:hidden;
-    background:linear-gradient(140deg,var(--hero1),var(--hero2) 55%,var(--hero3));
-    border:none;box-shadow:var(--shadow-md);color:var(--hero-text);
-  }
-  .hero::after{
-    content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;
-    background:radial-gradient(circle,rgba(var(--gold-rgb),.30),transparent 68%);pointer-events:none;
-  }
-  .hero h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.12;margin-bottom:8px;color:var(--hero-text)}
-  .hero p{font-size:14px;color:rgba(var(--hero-text-rgb),.72);line-height:1.55;max-width:46ch}
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+  /* ---------- stats ---------- */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:4px}
   .stat{
     border:none;border-radius:22px;background:var(--surface);box-shadow:var(--shadow-sm);
     padding:18px 12px;text-align:center;
@@ -148,26 +135,52 @@
           font-weight:400;line-height:1.15;font-variant-numeric:tabular-nums}
   .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:600}
 
-  /* ---------- big menu cards ---------- */
-  .menu{display:grid;gap:14px;grid-template-columns:1fr}
-  .mbtn{
-    position:relative;border-radius:var(--r);padding:24px 22px;text-align:left;width:100%;display:block;
-    background:var(--surface);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow-sm);
-    transition:transform .18s ease, box-shadow .18s ease;
-  }
-  /* each door into the hoard gets one of Korvold's three colours as a soft wash */
-  .mbtn::before{
-    content:"";position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(420px 150px at 0% 0%, var(--wash,transparent), transparent 72%);
-  }
-  .mbtn[data-go="decks"]{--wash:rgba(var(--green-rgb),.20)}
-  .mbtn[data-go="moves"]{--wash:rgba(var(--red-rgb),.20)}
-  .mbtn[data-go="signing"]{--wash:rgba(var(--gold-rgb),.18)}
-  .mbtn::after{content:"→";position:absolute;right:22px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:20px;opacity:.5}
-  .mbtn:active{transform:scale(.985)}
-  .mbtn .k{font-size:10.5px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;font-weight:700;position:relative}
-  .mbtn h2{font-family:var(--f-display);font-weight:400;font-size:25px;color:var(--text);margin:8px 0 7px;position:relative}
-  .mbtn p{font-size:13.5px;color:var(--muted);line-height:1.6;padding-right:26px;position:relative}
+  /* ---------- home dashboard ----------
+     Home used to be a menu of four big cards. Once the rail existed that menu was a second
+     navigation pointing at the same four places, so it became this: what you own, not where
+     to go. Only Signing and the life counter survive as buttons, because they are the two
+     destinations the rail and the tab bar don't carry. */
+  .sech{display:flex;align-items:center;gap:10px;margin:22px 0 11px;
+        font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .sech i{font-family:var(--f-num);font-style:normal;font-size:11px;color:var(--gold)}
+  .sech::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* Explicit counts, not auto-fit. `repeat(auto-fit,minmax(150px,220px))` looks like it
+     should give a phone two columns, but a definite max makes the browser count tracks at
+     220px, not 150 — so 343px of phone fitted exactly one. Stating the number per breakpoint
+     is duller and always right. */
+  .deckstrip{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (min-width:620px){ .deckstrip{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  @media (min-width:1000px){ .deckstrip{grid-template-columns:repeat(4,minmax(0,1fr))} }
+  @media (min-width:1500px){ .deckstrip{grid-template-columns:repeat(5,minmax(0,1fr))} }
+  .dcard{position:relative;border-radius:20px;overflow:hidden;text-align:left;min-height:152px;
+         border:1px solid rgba(var(--gold-rgb),.16);background:var(--surface);
+         display:flex;flex-direction:column;justify-content:flex-end;
+         transition:transform .18s ease, border-color .18s ease}
+  .dcard .por{position:absolute;inset:0;background:var(--surface3) center/cover no-repeat}
+  .dcard .por::after{content:"";position:absolute;inset:0;
+        background:linear-gradient(180deg,transparent 26%,rgba(var(--bg-rgb),.93))}
+  .dcard .dcb{position:relative;z-index:2;padding:12px 13px}
+  .dcard .dn{font-family:var(--f-display);font-size:15.5px;color:var(--text);line-height:1.25}
+  .dcard .dm{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .dcard .dv{font-family:var(--f-num);font-size:13px;color:var(--green);margin-top:5px}
+  .dcard .du{font-style:normal;color:var(--muted);font-size:11px}
+  .dcard:active{transform:scale(.985)}
+
+  .wstrip{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(155px,1fr))}
+  .wcard{border:1px solid rgba(var(--gold-rgb),.16);background:var(--surface);border-radius:16px;
+         padding:13px 14px;text-align:left;min-height:62px}
+  .wcard b{display:block;font-family:var(--f-display);font-weight:400;font-size:14.5px;color:var(--text)}
+  .wcard span{font-size:11.5px;color:var(--muted)}
+
+  .actrow{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(215px,1fr))}
+  .act{position:relative;border:1px solid rgba(var(--gold-rgb),.16);background:var(--surface);
+       border-radius:18px;padding:14px 34px 14px 15px;text-align:left;min-height:66px}
+  .act::after{content:"→";position:absolute;right:15px;top:50%;transform:translateY(-50%);
+              color:var(--gold);font-size:17px;opacity:.5}
+  .act b{display:block;font-family:var(--f-display);font-weight:400;font-size:16px;color:var(--gold)}
+  .act span{font-size:12px;color:var(--muted);line-height:1.5}
+  .act:active{transform:scale(.985)}
 
   /* ---------- list rows ---------- */
   .rows{display:grid;gap:12px}
@@ -524,6 +537,8 @@
     /* the ring reads as a badge in a horizontal row where the whole pill is already lit */
     .tab.on .ic{border-color:transparent;background:none}
     main{max-width:1320px}
+    /* the rail carries the life counter here, so home must not offer it twice */
+    .railhas{display:none}
 
     /* Card detail docks instead of taking over the screen. The backdrop stops painting and
        stops catching clicks, so the deck behind stays readable *and* tappable — you can
@@ -618,7 +633,9 @@
   <button class="tab" data-tab="wishes"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 4.6h10.4v14.8L12 15.9l-5.2 3.5z"/><path d="M9.6 9.2h4.8"/></svg></span>Wishlist</button>
   <button class="tab" data-tab="moves"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.6h13"/><path d="m13.8 5.2 3.4 3.4-3.4 3.4"/><path d="M20 15.4H7"/><path d="m10.2 12 -3.4 3.4 3.4 3.4"/></svg></span>Devoured</button>
   <button class="tab" data-tab="artists"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.4h16"/><path d="M15.3 4.9a1.9 1.9 0 0 1 2.7 2.7l-8.2 8.2-3.5.8.8-3.5z"/></svg></span>Artists</button>
+  <button class="tab railonly" data-tab="life"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5S4.8 15.3 4.8 10.2A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7.2 2.2c0 5.1-7.2 9.3-7.2 9.3z"/></svg></span>Life counter</button>
   <div class="railgap"></div>
+  <button class="tab railonly" id="railSearch"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2"/><path d="m15.2 15.2 4.3 4.3"/></svg></span>Search cards</button>
   <button class="tab railonly" id="railGear"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.2v2M12 17.8v2M4.2 12h2M17.8 12h2M6.5 6.5l1.4 1.4M16.1 16.1l1.4 1.4M17.5 6.5l-1.4 1.4M7.9 16.1l-1.4 1.4"/></svg></span>Settings</button>
 </nav>
 
@@ -638,7 +655,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-03 · desktop';
+const BUILD='2026.08.16-04 · home dashboard';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -754,8 +771,6 @@ function themeVars(t){
     '--ember':hx(a2.h,a2.s,a2.l),
     '--amb1-rgb':tr(a1.h,a1.s*.8,a1.l*.6),
     '--amb2-rgb':tr(a2.h,a2.s*.8,a2.l*.6),
-    '--hero1':hx(bh,bs+6,12), '--hero2':hx(a1.h,a1.s*.5,20), '--hero3':hx(a2.h,a2.s*.4,17),
-    '--hero-text':hx(bh,40,93),    '--hero-text-rgb':tr(bh,40,93),
     /* the stripe is the identity itself: Izzet runs blue to red, five-colour is a rainbow,
        and a mono theme has only one stop, so it ramps dim to bright instead */
     '--hazard':'linear-gradient(90deg,'+
@@ -1404,7 +1419,7 @@ function render(){
   // must not move the page. go()/back() set the offset they want after this returns.
   const y=scroller().scrollTop;
   const r=here();
-  const top={home:'home',decks:'decks',deck:'decks',rec:'decks',wishes:'wishes',wish:'wishes',
+  const top={home:'home',decks:'decks',deck:'decks',rec:'decks',wishes:'wishes',wish:'wishes',life:'life',
              moves:'moves',move:'moves',source:'moves',
              artists:'artists',signing:'artists',arts:'artists',
              add:(findWish(r.id)?'wishes':'decks')}[r.v];
@@ -1422,42 +1437,83 @@ function vHome(){
   _repaint=paintHomeStats;              // only the numbers refresh, never the buttons
   setBar("Korvold's Hoard",'Fae-Cursed King');
   const movedCount=STATE.moves.reduce((a,m)=>a+m.sources.reduce((b,s)=>b+s.cards.length,0),0);
+  const ws=STATE.wishlists||[];
+  const signed=Object.values(STATE.signed||{}).filter(Boolean).length;
   document.getElementById('main').innerHTML=`
-    <div class="hero">
-      <h2>The Hoard</h2>
-      <p>Whenever you sacrifice a permanent, draw a card. Six decks, every card, live pricing.</p>
-    </div>
     <div class="stats" id="homestats">${statTiles()}</div>
-    <div class="menu">
-      <button class="mbtn" data-go="decks">
-        <div class="k">The Vaults</div><h2>Decks</h2>
-        <p>Every deck in the archive. Cards, art, tags and live market pricing.</p>
+
+    <div class="sech">Your decks<i>${STATE.decks.length}</i></div>
+    ${STATE.decks.length?`<div class="deckstrip">${STATE.decks.map(d=>`
+      <button class="dcard" data-deck="${esc(d.id)}" data-deckcard="${esc(d.id)}">
+        <div class="por"></div>
+        <div class="dcb">
+          <div class="dn">${d.icon?`<span class="dicon">${esc(d.icon)}</span>`:''}${esc(d.name)}</div>
+          <div class="dm">${countEntries(d)} cards</div>
+          <div class="dv">—<em class="du"></em></div>
+        </div></button>`).join('')}</div>`
+      :'<div class="empty">No decks yet.<br>Open Decks and tap ＋ to add one.</div>'}
+
+    ${ws.length?`<div class="sech">Wishlist<i>${ws.reduce((n,w)=>n+countEntries(w),0)}</i></div>
+    <div class="wstrip">${ws.map(w=>`
+      <button class="wcard" data-wish="${esc(w.id)}">
+        <b>${esc(w.name)}</b>
+        <span>${countEntries(w)} wanted${w.sub?' · '+esc(w.sub):''}</span>
+      </button>`).join('')}</div>`:''}
+
+    <div class="sech">Next</div>
+    <div class="actrow">
+      <button class="act" data-go="signing">
+        <b>Signing</b>
+        <span>${signed?signed+' ticked off so far':'Scan your decks against the con lineup'}</span>
       </button>
-      <button class="mbtn" data-go="moves">
-        <div class="k">The Devoured</div><h2>Removed Cards</h2>
-        <p>What got stripped out of which deck, and where it went. ${movedCount} cards logged.</p>
+      <button class="act" data-go="moves">
+        <b>Devoured</b>
+        <span>${movedCount} cards logged out of decks</span>
       </button>
-      <button class="mbtn" data-go="life">
-        <div class="k">The Table</div><h2>Life Counter</h2>
-        <p>Lay the phone flat between you. Two to six players, commander damage, poison, and it tells you who's out.</p>
-      </button>
-      <button class="mbtn" data-go="signing">
-        <div class="k">The Royal Seal</div><h2>Signing</h2>
-        <p>Every card you own with a printing by an artist at the con, grouped by artist. Tick them off as they're signed.</p>
+      <button class="act railhas" data-go="life">
+        <b>Life counter</b>
+        <span>Two to six players, commander damage</span>
       </button>
     </div>`;
-  loadCards(STATE.decks.flatMap(deckCommanders));
+  paintHomeStats();                      // art and prices for any deck already cached
+  /* Every card, not just the commanders. The dashboard's whole premise is that its numbers
+     are real, and six commanders can't total six decks. It's ~9 batches, single-flighted
+     through INFLIGHT, and the cache is shared for the rest of the session — so every deck
+     you open afterwards is already priced. The signing scan runs a comparable burst. */
+  loadCards(STATE.decks.flatMap(d=>listEntries(d).map(e=>e.n))
+              .concat(STATE.decks.flatMap(deckCommanders)));
 }
 function statTiles(){
   const all=STATE.decks.flatMap(listEntries);
   const t=totalOfEntries(all);
   return `<div class="stat"><b>${STATE.decks.length}</b><span>Decks</span></div>
     <div class="stat"><b>${all.reduce((n,e)=>n+entryQty(e),0)}</b><span>Cards</span></div>
-    <div class="stat"><b>${t.known?money(t.sum):'—'}</b><span>Market</span></div>`;
+    <div class="stat"><b>${t.known?money(t.sum):'—'}</b><span>Market${t.unknown?` · ${t.unknown} unpriced`:''}</span></div>`;
 }
+/* Prices and art stream in after the view is painted, and a repaint that rebuilt the deck
+   cards would hand every tap to a detached node (constraint 5). #homestats holds no buttons
+   so it can be replaced wholesale; the deck cards are updated field by field instead. */
 function paintHomeStats(){
   const el=document.getElementById('homestats');
-  if(el) el.innerHTML=statTiles();     // buttons stay in the DOM, so taps never miss
+  if(el) el.innerHTML=statTiles();
+  document.querySelectorAll('[data-deckcard]').forEach(b=>{
+    const d=findDeck(b.dataset.deckcard); if(!d) return;
+    const por=b.querySelector('.por'), val=b.querySelector('.dv'), art=deckCover(d);
+    // guard on the URL: reassigning the same background restarts the image decode
+    if(por && art && por.dataset.art!==art){
+      por.style.backgroundImage=`url('${art}')`;
+      por.dataset.art=art;
+    }
+    /* Never let a partial sum pass as a total. Home used to load only the six commanders,
+       so a deck card read "$48.91" when that was the price of its commander alone — a
+       number that looks authoritative and is off by two orders of magnitude. Same
+       convention as the deck list: show what's known, then say what isn't. */
+    if(val){
+      const t=totalOfEntries(listEntries(d)), u=val.querySelector('.du');
+      val.firstChild.nodeValue=t.known?money(t.sum):'—';
+      if(u) u.textContent=t.unknown?` · ${t.unknown} unpriced`:'';
+    }
+  });
 }
 
 /* ---------- deck list ---------- */
@@ -3091,7 +3147,7 @@ document.addEventListener('click',async e=>{
 
   if(t.closest('#back')) return back();
   if(t.closest('#gearBtn')||t.closest('#railGear')) return sheetSettings();
-  if(t.closest('#searchBtn')){
+  if(t.closest('#searchBtn')||t.closest('#railSearch')){
     if(here().v==='search') return;
     document.getElementById('search').value='';
     SRCH_Q=''; SRCH_HITS=[]; SRCH_STATE='idle';
