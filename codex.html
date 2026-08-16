@@ -986,7 +986,10 @@ function totalOf(names){
    4. NAVIGATION  (explicit stack — back always works)
    ========================================================== */
 let STACK=[{v:'home'}];
-let MODE='art', EDIT=false;
+/* Whole cards by default. You recognise a card by its picture *and* its frame, and the
+   crop throws the frame away — the same reason the printing picker went full-card.
+   Overwritten from STATE at boot, so a switch to crops survives a reload. */
+let MODE='full', EDIT=false;
 const here=()=>STACK[STACK.length-1];
 
 /* Each route on the stack is a layer, and a layer remembers where it was scrolled to.
@@ -2553,8 +2556,16 @@ document.addEventListener('click',async e=>{
   const srow=t.closest('[data-source]');
   if(srow){ const [id,sid]=srow.dataset.source.split('|'); return go({v:'source',id,sid}); }
 
-  if(t.closest('#artModeBtn')){ ARTFULL=!ARTFULL; return vArts(here()); }
-  if(t.closest('#modeBtn')){ MODE=MODE==='art'?'full':'art'; return render(); }
+  if(t.closest('#artModeBtn')){
+    ARTFULL=!ARTFULL;
+    STATE.view=Object.assign({},VIEW(),{artFull:ARTFULL}); save();
+    return vArts(here());
+  }
+  if(t.closest('#modeBtn')){
+    MODE=MODE==='art'?'full':'art';
+    STATE.view=Object.assign({},VIEW(),{mode:MODE}); save();
+    return render();
+  }
   if(t.closest('#editBtn')){ EDIT=!EDIT; return render(); }
 
   const del=t.closest('[data-del]');
@@ -2796,7 +2807,13 @@ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostn
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 
-load(); banner(); render();
+load();
+// view preferences are saved state, so they have to be applied after it loads
+if(STATE.view){
+  if(STATE.view.mode) MODE=STATE.view.mode;
+  if(typeof STATE.view.artFull==='boolean') ARTFULL=STATE.view.artFull;
+}
+banner(); render();
 (async function probe(){
   try{
     const r=await fetch('https://api.scryfall.com/cards/named?fuzzy=sol%20ring',{signal:sig(8000)});
