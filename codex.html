@@ -362,7 +362,14 @@
              border-radius:16px;padding:14px 16px;margin-bottom:16px}
   #sheet .kv{font-size:12.5px;color:var(--muted);line-height:2.1}
   #sheet .kv b{color:var(--gold);font-weight:400}
-  #sheet .big{font-family:var(--f-display);font-size:30px;color:var(--green);margin:2px 0 14px}
+  #sheet .big{font-family:var(--f-display);font-size:30px;color:var(--green);margin:2px 0 10px}
+  /* the figures Scryfall actually publishes, side by side — TCGplayer's low/mid/high
+     needs their own API, so the button below links out for it rather than faking it */
+  .pricebar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .pricebar div{flex:1 1 68px;background:var(--surface2);border-radius:12px;padding:7px 9px}
+  .pricebar span{display:block;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .pricebar b{font-family:var(--f-num);font-size:14px;color:var(--green);font-weight:600;
+              font-variant-numeric:tabular-nums}
 
   /* ---------- forms ---------- */
   label{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
@@ -449,6 +456,7 @@
       <div class="sub" id="barSub">Fae-Cursed King</div>
     </div>
     <button class="icobtn" id="actBtn" aria-label="Action" hidden>⊞</button>
+    <button class="icobtn" id="searchBtn" aria-label="Search cards"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.2"/><path d="m15.2 15.2 4.3 4.3"/></svg></button>
     <button class="icobtn" id="gearBtn" aria-label="Settings">⚙</button>
   </div>
   <div class="toolbar">
@@ -1074,7 +1082,7 @@ function render(){
   document.body.classList.toggle('editing',EDIT && (r.v==='deck'||r.v==='wish'));
   if(r.v!=='life') document.body.classList.remove('life');
   ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,add:vAdd,
-    moves:vMoves,move:vMove,source:vSource,life:vLife,rec:vRec,
+    moves:vMoves,move:vMove,source:vSource,life:vLife,rec:vRec,search:vSearch,
     artists:vArtists,signing:vSigning,arts:vArts}[r.v]||vHome)(r);
   scroller().scrollTop=y;
 }
@@ -1483,6 +1491,144 @@ function cardTile(c,deckId,sectName){
     </div></div>`;
 }
 
+
+/* ---------- CARD SEARCH ----------
+   A general lookup, not the add flow: no list to put things in, results you can read.
+
+   Plain words become name matches, but anything containing Scryfall's own operators is
+   passed through untouched — so `o:"whenever ... deals combat damage"`, `t:legendary`
+   and `mv>=6` all work as typed. That's the "search by what a card does" ask from
+   earlier, answered by Scryfall's syntax rather than by guessing at it.
+
+   On prices: Scryfall publishes one USD figure (TCGplayer market), plus foil, etched and
+   EUR. TCGplayer's low/mid/high is not in the feed — it needs their own API, a key, and
+   a server to keep the key on — so the card sheet links straight to TCGplayer for the
+   full spread rather than inventing numbers. */
+let SRCH_TIMER=null, SRCH_ABORT=null, SRCH_Q='', SRCH_HITS=[], SRCH_STATE='idle', SRCH_MORE=0;
+const SORTS_SCRY={name:'Name',usd:'Price',edhrec:'Popularity',released:'Newest',cmc:'Mana value'};
+let SF={sort:'name', type:'', oracle:'', colors:'', legal:false, unique:'cards'};
+
+function scryQuery(raw){
+  const q=(raw||'').trim();
+  const parts=[];
+  // operators, comparisons or a quoted phrase mean the user is writing Scryfall directly
+  if(q){
+    if(/[:<>="]/.test(q)) parts.push(q);
+    else parts.push(q.split(/\s+/).map(w=>'name:'+JSON.stringify(w)).join(' '));
+  }
+  if(SF.type)   parts.push(SF.type.split(/\s*,\s*/).filter(Boolean).map(t=>'t:'+JSON.stringify(t)).join(' '));
+  if(SF.oracle) parts.push('o:'+JSON.stringify(SF.oracle));
+  if(SF.colors) parts.push('id<='+SF.colors);
+  if(SF.legal)  parts.push('legal:commander');
+  return parts.filter(Boolean).join(' ');
+}
+const sfActive=()=>!!(SF.type||SF.oracle||SF.colors||SF.legal);
+
+async function runSearch(term){
+  const q=scryQuery(term);
+  SRCH_Q=q;
+  if(SRCH_ABORT){ SRCH_ABORT.abort(); SRCH_ABORT=null; }
+  if(!q){ SRCH_STATE='idle'; SRCH_HITS=[]; if(here().v==='search') vSearch(); return; }
+  SRCH_STATE='busy'; if(here().v==='search') vSearch();
+  const ctl=new AbortController(); SRCH_ABORT=ctl;
+  try{
+    const url='https://api.scryfall.com/cards/search?unique='+SF.unique
+      +'&order='+SF.sort+'&q='+encodeURIComponent(q);
+    const r=await fetch(url,{signal:ctl.signal});
+    if(SRCH_Q!==q) return;
+    if(r.status===404){ SRCH_HITS=[]; SRCH_STATE='none'; }
+    else if(!r.ok){ SRCH_STATE='err'; }
+    else{
+      const j=await r.json();
+      if(SRCH_Q!==q) return;
+      EVER_OK=true;
+      SRCH_HITS=(j.data||[]).slice(0,120);
+      SRCH_MORE=Math.max(0,(j.total_cards||0)-SRCH_HITS.length);
+      SRCH_HITS.forEach(c=>{ CACHE.set(key(c.name),c); ART_BY_ID.set(c.id,c); });
+      SRCH_STATE='ok';
+    }
+  }catch(e){
+    if(e.name==='AbortError'||SRCH_Q!==q) return;
+    SRCH_STATE='err';
+  }
+  if(here().v==='search') vSearch();
+}
+
+function vSearch(){
+  _repaint=()=>{ if(here().v==='search') vSearch(); };
+  setBar('Search','Every card on Scryfall',{tools:true,placeholder:'Search cards…',searchFor:'search'});
+  const chipbar=document.getElementById('chips');
+  const want='search:'+SF.sort;
+  if(chipbar.dataset.for!==want){
+    chipbar.innerHTML=Object.entries(SORTS_SCRY).map(([k,t])=>
+      `<button class="chip${SF.sort===k?' on':''}" data-ssort="${k}">${t}</button>`).join('');
+    chipbar.dataset.for=want;
+  }
+
+  const tile=c=>{
+    const usd=c.prices&&(c.prices.usd||c.prices.usd_foil||c.prices.usd_etched);
+    const src=MODE==='art'?artOf(c):fullOf(c);
+    return `<button class="card" data-scryid="${esc(c.id)}">
+      ${src?`<img loading="lazy" src="${src}" alt="${esc(c.name)}">`
+           :`<div class="miss"><b>${esc(c.name)}</b></div>`}
+      <div class="plate"><div style="min-width:0">
+        <div class="nm">${esc(c.name)}</div><div class="tg">${esc(c.set_name||'')}</div>
+      </div><div class="pz">${usd?'$'+usd:'—'}</div></div>
+    </button>`;
+  };
+
+  const body = SRCH_STATE==='busy' ? '<div class="empty"><span class="spin"></span>Searching…</div>'
+    : SRCH_STATE==='err'  ? '<div class="empty">Couldn\'t reach Scryfall.<br>Check your connection and try again.</div>'
+    : SRCH_STATE==='none' ? '<div class="empty">Nothing matches that.<br><br>Scryfall syntax works here too — <code>t:dragon</code>, <code>o:"draw a card"</code>, <code>mv>=6</code>.</div>'
+    : SRCH_STATE==='ok'   ? `<div class="grid ${MODE}">${SRCH_HITS.map(tile).join('')}</div>
+        ${SRCH_MORE?`<div class="note">Showing ${SRCH_HITS.length}. ${SRCH_MORE.toLocaleString()} more match — narrow it down.</div>`:''}`
+    : `<div class="empty">Look up any card in Magic.<br><br>
+        Type a name, or use Scryfall syntax:<br>
+        <code>o:"whenever ~ deals combat damage"</code><br>
+        <code>t:legendary t:dragon</code> · <code>mv>=6</code> · <code>id&lt;=rg</code></div>`;
+
+  document.getElementById('main').innerHTML=`
+    <div class="totalbar">
+      <div><div class="l">Card search</div>
+           <div class="v" style="font-size:20px">${SRCH_STATE==='ok'?SRCH_HITS.length+(SRCH_MORE?'+':''):'—'}</div></div>
+      <div style="text-align:right">
+      <div class="btnrow" style="justify-content:flex-end">
+        <button class="btn sm ${sfActive()?'primary':''}" id="sfBtn">Filters</button>
+        <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
+      </div></div>
+    </div>
+    ${sfActive()?`<div class="note">Filtering: ${[SF.type&&'type '+esc(SF.type),SF.oracle&&'text “'+esc(SF.oracle)+'”',
+        SF.colors&&'identity '+esc(SF.colors.toUpperCase()),SF.legal&&'Commander legal'].filter(Boolean).join(' · ')}
+        <button class="btn sm" id="sfClear" style="margin-left:8px">Clear</button></div>`:''}
+    ${body}`;
+}
+
+/* The toggles redraw the whole sheet, which throws away anything typed but not yet
+   applied. Read the fields into SF first so a half-filled form survives the redraw. */
+function sfCapture(){
+  const ty=document.getElementById('sfType'), or=document.getElementById('sfOracle'),
+        co=document.getElementById('sfColors');
+  if(ty) SF.type=ty.value.trim();
+  if(or) SF.oracle=or.value.trim();
+  if(co) SF.colors=co.value.trim().toLowerCase().replace(/[^wubrgc]/g,'');
+}
+
+function sheetSearchFilters(){
+  openSheet(`<h3>Filters</h3><div class="tl">Narrow the search</div>
+    <label for="sfType">Type line</label>
+    <input class="inp" id="sfType" value="${esc(SF.type)}" placeholder="e.g. legendary, creature, dragon">
+    <label for="sfOracle">Rules text contains</label>
+    <input class="inp" id="sfOracle" value="${esc(SF.oracle)}" placeholder="e.g. whenever this creature deals combat damage">
+    <label for="sfColors">Colour identity is within</label>
+    <input class="inp" id="sfColors" value="${esc(SF.colors)}" placeholder="e.g. rg — leave blank for any" maxlength="5">
+    <div class="btnrow" style="margin-top:12px">
+      <button class="btn ${SF.legal?'primary':''}" id="sfLegal">Commander legal only</button>
+      <button class="btn ${SF.unique==='prints'?'primary':''}" id="sfUnique">${SF.unique==='prints'?'Every printing':'One per card'}</button>
+    </div>
+    <div class="note" style="margin-top:14px">Type line words are ANDed, so “legendary, dragon”
+      finds legendary dragons. Rules text is matched as a phrase.</div>
+    <button class="btn primary wide" id="sfApply" style="margin-top:14px">Apply</button>`);
+}
 
 /* ---------- EDHREC RECOMMENDATIONS ----------
    json.edhrec.com is the feed their own site runs on, and unlike Archidekt and Moxfield
@@ -2309,16 +2455,24 @@ function showCardObj(c,deckId){
       <div style="font-family:var(--f-display);font-size:19px;color:var(--gold);margin:2px 0 10px">${esc(c.artist||'—')}</div>
       <div class="l" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">TCGplayer market</div>
       <div class="big">${p.usd?'$'+p.usd:(p.usd_foil?'$'+p.usd_foil+' (foil)':'—')}</div>
+      <div class="pricebar">
+        <div><span>Normal</span><b>${p.usd?'$'+p.usd:'—'}</b></div>
+        <div><span>Foil</span><b>${p.usd_foil?'$'+p.usd_foil:'—'}</b></div>
+        ${p.usd_etched?`<div><span>Etched</span><b>$${p.usd_etched}</b></div>`:''}
+        <div><span>EUR</span><b>${p.eur?'€'+p.eur:'—'}</b></div>
+      </div>
       <div class="ot">${txt}</div>
       <div class="kv">
         <b>IN YOUR DECKS</b> ${inDecks.length?esc(inDecks.join(', ')):'—'}<br>
         ${onWish.length?`<b>ON WISHLIST</b> ${esc(onWish.join(', '))}<br>`:''}
         <b>MANA VALUE</b> ${c.cmc??'—'}<br>
         <b>IDENTITY</b> ${(c.color_identity||[]).join('')||'C'}<br>
-        <b>FOIL</b> ${p.usd_foil?'$'+p.usd_foil:'—'}<br>
-        <b>RARITY</b> ${esc(c.rarity||'—')}
+        <b>RARITY</b> ${esc(c.rarity||'—')}<br>
+        <b>SET</b> ${esc(c.set_name||'—')}
       </div>
-      ${c.scryfall_uri?`<a class="btn wide" href="${c.scryfall_uri}" target="_blank" rel="noopener">Open this printing on Scryfall</a>`:''}
+      ${c.purchase_uris&&c.purchase_uris.tcgplayer
+        ? `<a class="btn primary wide" href="${c.purchase_uris.tcgplayer}" target="_blank" rel="noopener">TCGplayer — low, mid &amp; market</a>`:''}
+      ${c.scryfall_uri?`<a class="btn wide" href="${c.scryfall_uri}" target="_blank" rel="noopener" style="margin-top:8px">Open this printing on Scryfall</a>`:''}
     </div>`,'card-detail');
 }
 
@@ -2468,6 +2622,28 @@ document.addEventListener('click',async e=>{
 
   if(t.closest('#back')) return back();
   if(t.closest('#gearBtn')) return sheetSettings();
+  if(t.closest('#searchBtn')){
+    if(here().v==='search') return;
+    document.getElementById('search').value='';
+    SRCH_Q=''; SRCH_HITS=[]; SRCH_STATE='idle';
+    return go({v:'search'});
+  }
+  /* --- card search --- */
+  const ss=t.closest('[data-ssort]');
+  if(ss){ SF.sort=ss.dataset.ssort; runSearch(document.getElementById('search').value); return vSearch(); }
+  if(t.closest('#sfBtn')) return sheetSearchFilters();
+  if(t.closest('#sfLegal')){ sfCapture(); SF.legal=!SF.legal; return sheetSearchFilters(); }
+  if(t.closest('#sfUnique')){ sfCapture(); SF.unique=SF.unique==='prints'?'cards':'prints'; return sheetSearchFilters(); }
+  if(t.closest('#sfApply')){
+    sfCapture();
+    closeSheet(); runSearch(document.getElementById('search').value); return vSearch();
+  }
+  if(t.closest('#sfClear')){
+    SF.type=''; SF.oracle=''; SF.colors=''; SF.legal=false;
+    runSearch(document.getElementById('search').value); return vSearch();
+  }
+  const sid=t.closest('[data-scryid]');
+  if(sid) return showCardObj(ART_BY_ID.get(sid.dataset.scryid),'');
   if(t.closest('#closeX')) return closeSheet();
   const artsGo=t.closest('[data-arts]');
   if(artsGo){
@@ -2810,10 +2986,15 @@ document.addEventListener('change',e=>{
    view it queries Scryfall, so it waits for a pause in typing — otherwise "rhystic study"
    fires twelve requests and the answers land out of order. */
 document.getElementById('search').addEventListener('input',()=>{
+  const v=document.getElementById('search').value;
   if(here().v==='add'){
     clearTimeout(ADD_TIMER);
-    const v=document.getElementById('search').value;
     ADD_TIMER=setTimeout(()=>runAddSearch(v),280);
+    return;
+  }
+  if(here().v==='search'){
+    clearTimeout(SRCH_TIMER);
+    SRCH_TIMER=setTimeout(()=>runSearch(v),300);
     return;
   }
   render();
