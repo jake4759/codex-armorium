@@ -735,7 +735,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-05 · polish';
+const BUILD='2026.08.16-06 · click away';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -3280,6 +3280,13 @@ function sheetSettings(){
    ========================================================== */
 document.addEventListener('click',async e=>{
   const t=e.target;
+
+  /* Click away to dismiss. The desktop drawer deliberately lets clicks reach the deck
+     behind it — its backdrop is pointer-events:none so you can keep browsing — which left
+     the ✕ as the only way to shut it. This runs first and deliberately does NOT return:
+     clicking another card closes this sheet *and* opens that one, because that is plainly
+     what the click meant. Anything inside .sheet is the sheet's own business. */
+  if(modal.classList.contains('live') && !t.closest('.sheet')) closeSheet();
 
   if(t.closest('#back')) return back();
   if(t.closest('#gearBtn')||t.closest('#railGear')) return sheetSettings();
