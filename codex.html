@@ -318,6 +318,9 @@
   .tab.on{color:var(--gold)}
   .tab.on .ic{border-color:var(--gold);background:var(--gold-glow)}
   .tab:active .ic{transform:scale(.9)}
+  /* rail furniture: the brand, the spacer that pushes Settings down, and Settings itself.
+     All of it is meaningless in a 430px pill, so it only exists at the desktop breakpoint. */
+  .railtop,.railonly,.railgap{display:none}
 
   /* ---------- life counter ----------
      Takes the whole screen: at a table the phone lies flat between four people, so app
@@ -486,7 +489,86 @@
     #sheet.card-detail{display:grid;grid-template-columns:320px 1fr;gap:26px}
     #sheet.card-detail img{margin-bottom:0}
   }
+  /* ==========================================================
+     DESKTOP — a different shape, not just a wider phone
+     ==========================================================
+     Below this width the floating bubble is right: a thumb reaches the bottom of a phone
+     and nothing else. Above it there is no thumb, there is a pointer and a great deal of
+     idle horizontal space, so the nav stops hovering over the content and becomes a rail
+     beside it — always visible, labelled, and no longer covering the last row of a list. */
+  @media (min-width:1000px){
+    :root{--rail:238px}
+    body{padding-left:var(--rail);padding-bottom:44px}
+    .tabs{
+      position:fixed;left:0;top:0;bottom:0;width:var(--rail);transform:none;
+      flex-direction:column;align-items:stretch;gap:3px;
+      padding:calc(var(--sat) + 16px) 14px calc(16px + var(--sab));
+      border:none;border-right:1px solid var(--line);border-radius:0;
+      background:rgba(var(--surface-rgb),.5);box-shadow:none;
+    }
+    .railtop{
+      display:flex;align-items:center;gap:10px;padding:6px 12px 18px;
+      font-family:var(--f-display);font-size:17px;color:var(--text);letter-spacing:.01em;
+    }
+    .railtop i{width:9px;height:26px;border-radius:3px;background:var(--hazard);flex:0 0 9px}
+    .railgap{display:block;flex:1;min-height:12px}
+    .railonly{display:flex}
+    .tab{
+      flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:11px;
+      padding:0 12px;min-height:46px;border-radius:14px;font-size:13.5px;
+      font-weight:500;letter-spacing:0;transition:color .18s ease, background .18s ease;
+    }
+    .tab .ic{width:30px;height:30px;flex:0 0 30px}
+    .tab .ic svg{width:18px;height:18px}
+    .tab.on{background:var(--gold-glow)}
+    /* the ring reads as a badge in a horizontal row where the whole pill is already lit */
+    .tab.on .ic{border-color:transparent;background:none}
+    main{max-width:1320px}
+
+    /* Card detail docks instead of taking over the screen. The backdrop stops painting and
+       stops catching clicks, so the deck behind stays readable *and* tappable — you can
+       walk a list card by card without the page dimming and undimming each time. */
+    .modal.live:has(#sheet.card-detail){
+      display:block;background:none;overflow:visible;pointer-events:none;
+      -webkit-backdrop-filter:none;backdrop-filter:none;
+    }
+    .modal.live:has(#sheet.card-detail) .sheet{
+      pointer-events:auto;position:fixed;inset:0 0 0 auto;width:min(560px,44vw);
+      margin:0;max-width:none;max-height:none;border-radius:0;border:none;
+      border-left:1px solid rgba(var(--gold-rgb),.3);
+      box-shadow:-26px 0 64px rgba(0,0,0,.55);animation:dock .22s ease;
+      padding:26px calc(24px + var(--sar)) calc(30px + var(--sab)) 24px;
+    }
+    /* 320px of art plus a text column does not fit a drawer — stack, and cap the image */
+    #sheet.card-detail{display:block}
+    #sheet.card-detail img{max-width:262px;margin:0 auto 16px}
+    @keyframes dock{from{transform:translateX(28px);opacity:0}to{transform:none;opacity:1}}
+  }
+
+  /* ---------- compact table (desktop view mode) ---------- */
+  .ctab{width:100%;border-collapse:collapse;margin:0 0 18px;font-size:13px}
+  .ctab th{text-align:left;font-weight:400;font-size:10px;letter-spacing:.13em;
+           text-transform:uppercase;color:var(--muted);
+           padding:0 10px 8px;border-bottom:1px solid var(--line)}
+  .ctab td{padding:7px 10px;border-bottom:1px solid rgba(var(--gold-rgb),.06)}
+  .ctab tbody tr{cursor:pointer}
+  #main table.ctab:not(:first-of-type) thead{display:none}
+  .ctab .q{width:40px;font-family:var(--f-num);font-size:11.5px;color:var(--gold)}
+  .ctab .nm{color:var(--text)}
+  .ctab .ty{color:var(--muted);width:28%}
+  .ctab .mv{width:52px;text-align:right;font-family:var(--f-num);color:var(--muted)}
+  .ctab .pz{width:88px;text-align:right;font-family:var(--f-num);color:var(--green)}
+  .ctab .fo{color:var(--gold);font-size:9.5px;letter-spacing:.1em;
+            text-transform:uppercase;margin-left:7px}
+
+  /* ---------- hover preview (mouse only) ---------- */
+  .hovcard{position:fixed;left:0;top:0;width:250px;border-radius:14px;z-index:120;
+           display:block;pointer-events:none;box-shadow:0 18px 50px rgba(0,0,0,.66);
+           border:1px solid rgba(var(--gold-rgb),.35)}
+  .hovcard[hidden]{display:none}
+
   @media (hover:hover) and (pointer:fine){
+    .ctab tbody tr:hover{background:var(--surface2)}
     .mbtn:hover,.lrow:hover{background:var(--surface2);border-color:rgba(var(--gold-rgb),.4)}
     .card:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 12px 28px rgba(0,0,0,.6)}
     .icobtn:hover{background:var(--surface3)}
@@ -530,11 +612,14 @@
 <noscript><div class="empty">JavaScript is required. Open this file in Safari or Chrome.</div></noscript>
 <footer></footer>
 <nav class="tabs" id="tabs">
+  <div class="railtop"><i></i>The Hoard</div>
   <button class="tab" data-tab="home"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6 4 9v10.4h16V9z"/><path d="M9.5 19.4v-5.2h5v5.2"/></svg></span>Hoard</button>
   <button class="tab" data-tab="decks"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="10" height="14" rx="2.2"/><path d="M16.5 6.6a2 2 0 0 1 2 2v8.8a2 2 0 0 1-2 2"/><path d="M20 8.6v6.8"/></svg></span>Decks</button>
   <button class="tab" data-tab="wishes"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 4.6h10.4v14.8L12 15.9l-5.2 3.5z"/><path d="M9.6 9.2h4.8"/></svg></span>Wishlist</button>
   <button class="tab" data-tab="moves"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.6h13"/><path d="m13.8 5.2 3.4 3.4-3.4 3.4"/><path d="M20 15.4H7"/><path d="m10.2 12 -3.4 3.4 3.4 3.4"/></svg></span>Devoured</button>
   <button class="tab" data-tab="artists"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.4h16"/><path d="M15.3 4.9a1.9 1.9 0 0 1 2.7 2.7l-8.2 8.2-3.5.8.8-3.5z"/></svg></span>Artists</button>
+  <div class="railgap"></div>
+  <button class="tab railonly" id="railGear"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.2v2M12 17.8v2M4.2 12h2M17.8 12h2M6.5 6.5l1.4 1.4M16.1 16.1l1.4 1.4M17.5 6.5l-1.4 1.4M7.9 16.1l-1.4 1.4"/></svg></span>Settings</button>
 </nav>
 
 <div class="modal" id="modal">
@@ -553,7 +638,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-02 · colour identities';
+const BUILD='2026.08.16-03 · desktop';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -1053,10 +1138,19 @@ function clearCardArt(deckId,name){
 }
 function tileArt(name,deckId){
   const o=artPick(name,deckId);
-  if(o) return MODE==='art'?o.art:o.full;
+  if(o) return gridMode()==='art'?o.art:o.full;
   const card=CACHE.get(key(name));
-  return MODE==='art'?artOf(card):fullOf(card);
+  return gridMode()==='art'?artOf(card):fullOf(card);
 }
+/* The full card image for a name, honouring this deck's chosen printing. Separate from
+   tileArt because the hover preview always wants the whole card, whatever the grid is
+   currently showing — and because looking it up by name instead would return Scryfall's
+   default printing and preview the wrong frame. */
+const tileFull=(name,deckId)=>{
+  const o=artPick(name,deckId);
+  return o?o.full:fullOf(CACHE.get(key(name)));
+};
+
 function priceOf(name){
   const c=CACHE.get(key(name)); if(!c||!c.prices) return null;
   const p=c.prices.usd||c.prices.usd_foil||c.prices.usd_etched;
@@ -1190,6 +1284,20 @@ let STACK=[{v:'home'}];
    crop throws the frame away — the same reason the printing picker went full-card.
    Overwritten from STATE at boot, so a switch to crops survives a reload. */
 let MODE='full', EDIT=false;
+/* A third way to read a list. `table` is deliberately desktop-only: it trades the art that
+   makes the grid worth looking at for row density, which is a good trade on a monitor and a
+   bad one on a phone, where forty rows of 11px text is just a worse grid. Everything that
+   paints a tile asks gridMode() rather than MODE, so a 'table' saved on the desktop
+   degrades to full cards on the phone instead of rendering an empty view. */
+const MODES=['art','full','table'];
+const MODE_NAME={art:'Art view',full:'Full cards',table:'Table'};
+const wide=()=>window.matchMedia('(min-width:1000px)').matches;
+const tableOK=()=>MODE==='table'&&wide();
+const gridMode=()=>MODE==='table'?'full':MODE;
+// indexOf is -1 for a table mode on a narrow screen, which lands the cycle back on 'art'
+const nextMode=()=>{ const l=wide()?MODES:MODES.slice(0,2); return l[(l.indexOf(MODE)+1)%l.length]; };
+const modeLabel=()=>MODE_NAME[nextMode()];
+
 const here=()=>STACK[STACK.length-1];
 
 /* Each route on the stack is a layer, and a layer remembers where it was scrolled to.
@@ -1396,7 +1504,8 @@ function vDeck(r){
     const st=totalOfEntries(g.entries), n=g.entries.reduce((a,e)=>a+entryQty(e),0);
     return `<div class="sec">${esc(g.header)}<span>${n}</span><em>${st.known?money(st.sum):'—'}</em></div>
       ${g.note&&!q&&!active?`<div class="note">${esc(g.note)}</div>`:''}
-      <div class="grid ${MODE}">${g.entries.map(c=>cardTile(c,d.id,g.header)).join('')}</div>`;
+      ${tableOK()?cardTable(g.entries,d.id)
+                 :`<div class="grid ${gridMode()}">${g.entries.map(c=>cardTile(c,d.id,g.header)).join('')}</div>`}`;
   }).join('');
 
   document.getElementById('main').innerHTML=`
@@ -1405,7 +1514,7 @@ function vDeck(r){
       <div style="text-align:right">
         <div class="l">${countEntries(d)} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
         <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
-          <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
+          <button class="btn sm" id="modeBtn">${modeLabel()}</button>
           <button class="btn sm" id="viewBtn">⊞ ${esc(GROUPS[VIEW().group]||'Type')}</button>
           <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
           <button class="btn sm" id="deckEdit">Deck…</button>
@@ -1485,7 +1594,8 @@ function vWish(r){
     const st=totalOfEntries(cards);
     return `<div class="sec">${esc(s.name)}<span>${cards.reduce((n,e)=>n+entryQty(e),0)}</span><em>${st.known?money(st.sum):'—'}</em></div>
       ${s.note&&!q&&!active?`<div class="note">${esc(s.note)}</div>`:''}
-      <div class="grid ${MODE}">${cards.map(c=>cardTile(c,w.id,s.name)).join('')}</div>`;
+      ${tableOK()?cardTable(cards,w.id)
+                 :`<div class="grid ${gridMode()}">${cards.map(c=>cardTile(c,w.id,s.name)).join('')}</div>`}`;
   }).join('');
 
   document.getElementById('main').innerHTML=`
@@ -1494,7 +1604,7 @@ function vWish(r){
       <div style="text-align:right">
         <div class="l">${nCards} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
         <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
-          <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
+          <button class="btn sm" id="modeBtn">${modeLabel()}</button>
           <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
           <button class="btn sm" id="wishEdit">List…</button>
         </div>
@@ -1710,7 +1820,7 @@ function cardTile(c,deckId,sectName){
                 :`<div class="miss"><b>${esc(c.n)}</b><span style="font-size:8.5px;letter-spacing:.14em;opacity:.55">NO IMAGE</span></div>`;
   return `<div class="card" data-card="${esc(c.n)}" ${deckId?`data-deck="${esc(deckId)}" data-sect="${esc(sectName)}"`:''}>
     ${badge}${deckId?`<button class="del" data-del="1" aria-label="Remove">✕</button>`:''}
-    ${img}${MODE==='full'?`<div class="pricetag">${money(p)}</div>`:''}
+    ${img}${gridMode()==='full'?`<div class="pricetag">${money(p)}</div>`:''}
     <div class="plate">
       <div style="min-width:0"><div class="nm">${esc(c.n)}</div>${
         // finish and condition only earn a line when they aren't the default
@@ -1720,6 +1830,32 @@ function cardTile(c,deckId,sectName){
     </div></div>`;
 }
 
+
+/* One dense row per copy. Type and mana value come out of CACHE, so before prices land the
+   columns are simply blank rather than the table jumping about as they arrive — the same
+   reason the grid shows "—" for an unpriced card. Rows carry data-card/data-deck exactly as
+   a tile does, which is why the card-tap handler matches on the attribute and not on
+   `.card`: one handler then opens a row and a tile alike. */
+function cardTable(entries,listId){
+  const rows=entries.map(e=>{
+    const c=CACHE.get(key(e.n));
+    const type=c?String(c.type_line||'').split('—')[0].trim():'';
+    const q=entryQty(e);
+    return `<tr data-card="${esc(e.n)}"${listId?` data-deck="${esc(listId)}"`:''}>
+      <td class="q">${q>1?'×'+q:''}</td>
+      <td class="nm">${esc(e.n)}${e.foil?'<span class="fo">Foil</span>':''}${
+        e.cond&&e.cond!=='NM'?`<span class="fo">${esc(e.cond)}</span>`:''}</td>
+      <td class="ty">${esc(type)}</td>
+      <td class="mv">${c&&c.cmc!=null?c.cmc:''}</td>
+      <td class="pz">${money(entryPrice(e))}</td></tr>`;
+  }).join('');
+  /* Every section emits its own header row and CSS shows only the first. Deciding it here
+     from the section index would be wrong: a filter can empty section 0, and then the one
+     table that renders is the one told not to draw a header. */
+  return `<table class="ctab"><thead><tr>
+      <th></th><th>Card</th><th>Type</th><th>MV</th><th>Price</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+}
 
 /* ---------- CARD SEARCH ----------
    A general lookup, not the add flow: no list to put things in, results you can read.
@@ -1814,7 +1950,7 @@ function vSearch(){
 
   const tile=c=>{
     const usd=c.prices&&(c.prices.usd||c.prices.usd_foil||c.prices.usd_etched);
-    const src=MODE==='art'?artOf(c):fullOf(c);
+    const src=gridMode()==='art'?artOf(c):fullOf(c);
     return `<button class="card" data-scryid="${esc(c.id)}">
       ${src?`<img loading="lazy" src="${src}" alt="${esc(c.name)}">`
            :`<div class="miss"><b>${esc(c.name)}</b></div>`}
@@ -1827,7 +1963,7 @@ function vSearch(){
   const body = SRCH_STATE==='busy' ? '<div class="empty"><span class="spin"></span>Searching…</div>'
     : SRCH_STATE==='err'  ? '<div class="empty">Couldn\'t reach Scryfall.<br>Check your connection and try again.</div>'
     : SRCH_STATE==='none' ? '<div class="empty">Nothing matches that.<br><br>Scryfall syntax works here too — <code>t:dragon</code>, <code>o:"draw a card"</code>, <code>mv>=6</code>.</div>'
-    : SRCH_STATE==='ok'   ? `<div class="grid ${MODE}">${SRCH_HITS.map(tile).join('')}</div>
+    : SRCH_STATE==='ok'   ? `<div class="grid ${gridMode()}">${SRCH_HITS.map(tile).join('')}</div>
         ${SRCH_MORE?`<div class="note">Showing ${SRCH_HITS.length}. ${SRCH_MORE.toLocaleString()} more match — narrow it down.</div>`:''}`
     : `<div class="empty">Look up any card in Magic.<br><br>
         Type a name, or use Scryfall syntax:<br>
@@ -1841,7 +1977,7 @@ function vSearch(){
       <div style="text-align:right">
       <div class="btnrow" style="justify-content:flex-end">
         <button class="btn sm ${sfActive()?'primary':''}" id="sfBtn">Filters</button>
-        <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button>
+        <button class="btn sm" id="modeBtn">${modeLabel()}</button>
       </div></div>
     </div>
     ${sfActive()?`<div class="note">Filtering: ${[SF.type&&'type '+esc(SF.type),SF.oracle&&'text “'+esc(SF.oracle)+'”',
@@ -1971,7 +2107,7 @@ function vRec(r){
   const tile=c=>{
     const have=inDeck.has(key(c.n));
     const pct=c.of?Math.round(100*c.decks/c.of):null;
-    const src=MODE==='art'?artOf(CACHE.get(key(c.n))):fullOf(CACHE.get(key(c.n)));
+    const src=gridMode()==='art'?artOf(CACHE.get(key(c.n))):fullOf(CACHE.get(key(c.n)));
     return `<button class="card${have?' inlist':''}" data-recadd="${esc(c.n)}">
       ${have?'<div class="badge combo">In deck</div>':(pct!=null?`<div class="badge cmd">${pct}%</div>`:'')}
       ${src?`<img loading="lazy" src="${src}" alt="${esc(c.n)}">`
@@ -1988,7 +2124,7 @@ function vRec(r){
     : rec.failed ? '<div class="empty">Couldn\'t reach EDHREC.<br>Check your connection and go back in.</div>'
     : !lists.length ? '<div class="empty">Nothing matches that filter.</div>'
     : lists.map(l=>`<div class="sec">${esc(l.header)}<span>${l.cards.length}</span></div>
-        <div class="grid ${MODE}">${l.cards.map(tile).join('')}</div>`).join('');
+        <div class="grid ${gridMode()}">${l.cards.map(tile).join('')}</div>`).join('');
 
   const total=lists.reduce((n,l)=>n+l.cards.length,0);
   m.innerHTML=`
@@ -1997,7 +2133,7 @@ function vRec(r){
            <div class="v" style="font-size:20px">${esc(d.name)}</div></div>
       <div style="text-align:right"><div class="l">${total} recommendation${total===1?'':'s'}</div>
       <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
-        <button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button></div></div>
+        <button class="btn sm" id="modeBtn">${modeLabel()}</button></div></div>
     </div>
     <div class="note">The percentage is how many ${esc(deckCommanders(d).map(n=>n.split(',')[0]).join(' + '))} decks run the card. Tap one to add it to <b style="color:var(--gold)">${esc(d.name)}</b>.</div>
     ${body}`;
@@ -2397,10 +2533,10 @@ function vSource(r){
     <div class="totalbar">
       <div><div class="l">Value removed</div><div class="v">${t.known?money(t.sum):'—'}</div></div>
       <div style="text-align:right"><div class="l">${s.cards.length} cards · into ${esc(m.target.split(',')[0])}</div>
-      <div class="btnrow" style="margin-top:6px;justify-content:flex-end"><button class="btn sm" id="modeBtn">${MODE==='art'?'Full cards':'Art view'}</button></div></div>
+      <div class="btnrow" style="margin-top:6px;justify-content:flex-end"><button class="btn sm" id="modeBtn">${modeLabel()}</button></div></div>
     </div>
     ${warn}
-    <div class="grid ${MODE}">${cards.map(c=>cardTile(c)).join('')}</div>
+    <div class="grid ${gridMode()}">${cards.map(c=>cardTile(c)).join('')}</div>
     ${cards.length?'':'<div class="empty">Nothing matches that filter.</div>'}`;
   loadCards(s.cards.map(c=>c.n));
 }
@@ -2954,7 +3090,7 @@ document.addEventListener('click',async e=>{
   const t=e.target;
 
   if(t.closest('#back')) return back();
-  if(t.closest('#gearBtn')) return sheetSettings();
+  if(t.closest('#gearBtn')||t.closest('#railGear')) return sheetSettings();
   if(t.closest('#searchBtn')){
     if(here().v==='search') return;
     document.getElementById('search').value='';
@@ -3019,7 +3155,11 @@ document.addEventListener('click',async e=>{
   const tb=t.closest('[data-tab]');
   if(tb){ const v=tb.dataset.tab; if(here().v!==v) go({v},true); return; }
   const menu=t.closest('[data-go]');   if(menu) return go({v:menu.dataset.go});
-  const drow=t.closest('[data-deck]:not(.card)'); if(drow) return go({v:'deck',id:drow.dataset.deck});
+  /* :not([data-card]) matters as much as :not(.card). A table row carries data-deck so the
+     card sheet knows whose art pick to honour, and without this it matched here first —
+     tapping a row silently re-navigated to the deck you were already in. */
+  const drow=t.closest('[data-deck]:not(.card):not([data-card])');
+  if(drow) return go({v:'deck',id:drow.dataset.deck});
   const wrow=t.closest('[data-wish]'); if(wrow) return go({v:'wish',id:wrow.dataset.wish});
   if(t.closest('#wishEdit')) return sheetEditWish(here().id);
   if(t.closest('#deckEdit')) return sheetEditDeck(here().id);
@@ -3124,7 +3264,7 @@ document.addEventListener('click',async e=>{
     return vArts(here());
   }
   if(t.closest('#modeBtn')){
-    MODE=MODE==='art'?'full':'art';
+    MODE=nextMode();
     STATE.view=Object.assign({},VIEW(),{mode:MODE}); save();
     return render();
   }
@@ -3218,7 +3358,8 @@ document.addEventListener('click',async e=>{
     return render();
   }
 
-  const card=t.closest('.card');
+  // the attribute, not `.card` — a table row carries the same data and deserves the same tap
+  const card=t.closest('[data-card]');
   if(card && !EDIT){
     const sid=card.dataset.sid;
     if(sid && SCAN && SCAN.byId && SCAN.byId.has(sid)) return showCardObj(SCAN.byId.get(sid));
@@ -3393,6 +3534,43 @@ document.addEventListener('wheel',e=>{
 },{passive:false});
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
+
+/* ---------- hover preview ----------
+   Mouse only, and only when the grid isn't already showing whole cards — previewing a full
+   card next to a full card is noise. The image comes from the tile's *resolved* printing
+   via tileFull(), not from a lookup by name: the deck may have a chosen printing, and
+   looking it up by name would preview Scryfall's default frame instead (CLAUDE.md 3). */
+(function hoverPreview(){
+  if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  const el=document.createElement('img');
+  el.className='hovcard'; el.hidden=true; el.alt='';
+  document.body.appendChild(el);
+  const hide=()=>{ el.hidden=true; };
+  const worthIt=()=>MODE==='art'||tableOK();
+  function place(e){
+    const w=250, h=350, pad=18;
+    let x=e.clientX+pad;
+    if(x+w>innerWidth-10) x=e.clientX-w-pad;          // flip to the left near the edge
+    const y=Math.max(10,Math.min(e.clientY-h/2,innerHeight-h-10));
+    el.style.transform=`translate(${Math.max(10,x)}px,${y}px)`;
+  }
+  document.addEventListener('mouseover',e=>{
+    const t=e.target.closest&&e.target.closest('[data-card]');
+    // never over an open sheet — the drawer is the better view of the same card
+    if(!t||!worthIt()||modal.classList.contains('live')) return hide();
+    const src=tileFull(t.dataset.card,t.dataset.deck||'');
+    if(!src) return hide();
+    if(el.getAttribute('src')!==src) el.src=src;
+    el.hidden=false; place(e);
+  });
+  document.addEventListener('mousemove',e=>{ if(!el.hidden) place(e); });
+  document.addEventListener('mouseout',e=>{
+    const to=e.relatedTarget;
+    if(!to||!to.closest||!to.closest('[data-card]')) hide();
+  });
+  // a repaint or a route change can pull the hovered tile out from under the cursor
+  document.addEventListener('scroll',hide,{passive:true,capture:true});
+})();
 
 /* ==========================================================
    8. BOOT
