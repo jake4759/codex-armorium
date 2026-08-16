@@ -19,13 +19,33 @@
        dark build on purpose: every rule below still resolves, so the palette can be
        re-pointed in one place without touching component CSS. */
     --bg:#0f0b0a; --surface:#1a1311; --surface2:#241a17; --surface3:#2f2320;
-    --gold:#e3b765; --gold-dim:#8d7134; --gold-glow:rgba(227,183,101,.13);
+    --gold:#e3b765; --gold-dim:#8d7134; --gold-glow:rgba(var(--gold-rgb),.13);
     --gold-soft:#3a2c17;
     --red:#c4453a; --red-soft:#3c1a16;
     --green:#6ea355; --green-soft:#1f2d19;
     --ember:#e0742f;
     --text:#f4ece0; --muted:#a3948a;
-    --line:rgba(227,183,101,.11);
+    --line:rgba(var(--gold-rgb),.11);
+
+    /* ---- the themeable layer ----
+       Everything above is a flat colour; these are the same colours as *channels*, so a
+       theme can re-point them once instead of the stylesheet repeating a literal in forty
+       places. The rgb triples exist because CSS cannot pull an alpha out of a hex var —
+       `rgba(var(--gold-rgb),.3)` is the only way to say "the accent, faded". Values here
+       are exactly what they replaced, so the default Jund look is untouched. */
+    --bg-rgb:15,11,10;
+    --surface-rgb:30,22,19;
+    --gold-rgb:227,183,101;
+    --red-rgb:196,69,58;
+    --green-rgb:110,163,85;
+    --on-gold:#1a1311;              /* text sitting on a filled accent — must invert with it */
+    --life-bg:#0a0708;
+    /* the two soft blooms behind the page, and the thin identity stripe at the very top */
+    --amb1-rgb:163,51,42; --amb2-rgb:70,115,58;
+    --hazard:linear-gradient(90deg,var(--green),var(--gold),var(--red));
+    --hero1:#2e1f18; --hero2:#4a2a1e; --hero3:#3d3320;
+    --hero-text:#f6ecd9; --hero-text-rgb:246,236,217;
+
     --shadow-sm:0 1px 2px rgba(0,0,0,.40), 0 4px 14px rgba(0,0,0,.28);
     --shadow-md:0 6px 18px rgba(0,0,0,.45), 0 18px 44px rgba(0,0,0,.36);
     /* Three faces, each with a job. All system-resident on purpose: a webfont that fails
@@ -49,23 +69,23 @@
     background:var(--bg); color:var(--text);
     font-family:var(--f-ui);
     background-image:
-      radial-gradient(900px 420px at 88% -8%, rgba(163,51,42,.10), transparent 62%),
-      radial-gradient(760px 400px at 2% 6%, rgba(70,115,58,.10), transparent 62%),
-      radial-gradient(680px 380px at 50% 104%, rgba(168,118,31,.09), transparent 66%);
+      radial-gradient(900px 420px at 88% -8%, rgba(var(--amb1-rgb),.10), transparent 62%),
+      radial-gradient(760px 400px at 2% 6%, rgba(var(--amb2-rgb),.10), transparent 62%),
+      radial-gradient(680px 380px at 50% 104%, rgba(var(--gold-rgb),.09), transparent 66%);
     background-attachment:fixed; min-height:100dvh;
     overscroll-behavior-y:none; -webkit-font-smoothing:antialiased;
     padding-bottom:calc(var(--tab) + var(--sab) + 18px);
   }
-  ::selection{background:var(--gold);color:#fff}
+  ::selection{background:var(--gold);color:var(--on-gold)}
   button,input,select{font:inherit;color:inherit}
   button{background:none;border:none;cursor:pointer;touch-action:manipulation}
 
   /* ---------- top bar ---------- */
-  .hazard{height:3px;background:linear-gradient(90deg,var(--green),var(--gold),var(--red))}
+  .hazard{height:3px;background:var(--hazard)}
   .appbar{
     position:sticky;top:0;z-index:60;
     padding:calc(var(--sat) + 8px) calc(16px + var(--sar)) 0 calc(16px + var(--sal));
-    background:rgba(15,11,10,.82);
+    background:rgba(var(--bg-rgb),.82);
     -webkit-backdrop-filter:saturate(150%) blur(18px); backdrop-filter:saturate(150%) blur(18px);
   }
   .row{display:flex;align-items:center;gap:12px;min-height:var(--bar)}
@@ -74,7 +94,7 @@
     display:flex;align-items:center;justify-content:center;color:var(--text);font-size:19px;
     background:var(--surface);box-shadow:var(--shadow-sm);
   }
-  .icobtn:active{background:var(--gold);color:#1a1311;transform:scale(.94)}
+  .icobtn:active{background:var(--gold);color:var(--on-gold);transform:scale(.94)}
   .icobtn[hidden]{display:none}
   .barttl{flex:1;min-width:0}
   .barttl h1{
@@ -99,7 +119,7 @@
     background:var(--surface);box-shadow:var(--shadow-sm);
     font-size:13px;color:var(--muted);display:flex;align-items:center;white-space:nowrap;font-weight:500;
   }
-  .chip.on{background:var(--gold);color:#1a1311;font-weight:600}
+  .chip.on{background:var(--gold);color:var(--on-gold);font-weight:600}
 
   /* ---------- layout ---------- */
   main{padding:6px calc(16px + var(--sar)) 24px calc(16px + var(--sal));max-width:1400px;margin:0 auto}
@@ -110,15 +130,15 @@
   /* ---------- hero + stats ---------- */
   .hero{
     border-radius:var(--r);padding:26px 24px;margin-bottom:14px;position:relative;overflow:hidden;
-    background:linear-gradient(140deg,#2e1f18,#4a2a1e 55%,#3d3320);
-    border:none;box-shadow:var(--shadow-md);color:#f6ecd9;
+    background:linear-gradient(140deg,var(--hero1),var(--hero2) 55%,var(--hero3));
+    border:none;box-shadow:var(--shadow-md);color:var(--hero-text);
   }
   .hero::after{
     content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;
-    background:radial-gradient(circle,rgba(201,166,104,.30),transparent 68%);pointer-events:none;
+    background:radial-gradient(circle,rgba(var(--gold-rgb),.30),transparent 68%);pointer-events:none;
   }
-  .hero h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.12;margin-bottom:8px;color:#f6ecd9}
-  .hero p{font-size:14px;color:rgba(246,236,217,.72);line-height:1.55;max-width:46ch}
+  .hero h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.12;margin-bottom:8px;color:var(--hero-text)}
+  .hero p{font-size:14px;color:rgba(var(--hero-text-rgb),.72);line-height:1.55;max-width:46ch}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
   .stat{
     border:none;border-radius:22px;background:var(--surface);box-shadow:var(--shadow-sm);
@@ -140,9 +160,9 @@
     content:"";position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(420px 150px at 0% 0%, var(--wash,transparent), transparent 72%);
   }
-  .mbtn[data-go="decks"]{--wash:rgba(110,163,85,.20)}
-  .mbtn[data-go="moves"]{--wash:rgba(196,69,58,.20)}
-  .mbtn[data-go="signing"]{--wash:rgba(227,183,101,.18)}
+  .mbtn[data-go="decks"]{--wash:rgba(var(--green-rgb),.20)}
+  .mbtn[data-go="moves"]{--wash:rgba(var(--red-rgb),.20)}
+  .mbtn[data-go="signing"]{--wash:rgba(var(--gold-rgb),.18)}
   .mbtn::after{content:"→";position:absolute;right:22px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:20px;opacity:.5}
   .mbtn:active{transform:scale(.985)}
   .mbtn .k{font-size:10.5px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;font-weight:700;position:relative}
@@ -153,7 +173,7 @@
   .rows{display:grid;gap:12px}
   .lrow{
     position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:0;
-    border:1px solid rgba(217,180,91,.16);border-radius:20px;background:var(--surface);overflow:hidden;min-height:92px;
+    border:1px solid rgba(var(--gold-rgb),.16);border-radius:20px;background:var(--surface);overflow:hidden;min-height:92px;
   }
   .lrow:active{background:var(--surface2);transform:scale(.99)}
   .lrow .por{width:96px;flex:0 0 96px;align-self:stretch;background:var(--surface3) center/cover no-repeat;position:relative}
@@ -170,7 +190,7 @@
      with a scrim heavy enough on the left that the name stays readable over any art */
   .lrow.banner{min-height:104px}
   .lrow.banner .por{position:absolute;inset:0;width:auto;flex:none}
-  .lrow.banner .por::after{background:linear-gradient(90deg,rgba(13,10,11,.94) 22%,rgba(13,10,11,.62) 62%,rgba(13,10,11,.42))}
+  .lrow.banner .por::after{background:linear-gradient(90deg,rgba(var(--bg-rgb),.94) 22%,rgba(var(--bg-rgb),.62) 62%,rgba(var(--bg-rgb),.42))}
   .lrow.banner .body{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;
                      gap:12px;padding:16px 38px 16px 18px}
   .lrow.banner .br{text-align:right;flex:0 0 auto}
@@ -198,7 +218,7 @@
         background:var(--surface);border-left:3px solid var(--gold);border-radius:0 14px 14px 0;padding:12px 14px}
   .totalbar{
     display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-    border:1px solid rgba(217,180,91,.2);border-radius:20px;
+    border:1px solid rgba(var(--gold-rgb),.2);border-radius:20px;
     background:linear-gradient(135deg,var(--surface2),var(--surface));padding:16px 18px;margin-bottom:8px;
   }
   .totalbar .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
@@ -208,7 +228,7 @@
   /* ---------- card grid ---------- */
   .grid{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
   .card{
-    position:relative;border:1px solid rgba(217,180,91,.16);background:var(--surface);
+    position:relative;border:1px solid rgba(var(--gold-rgb),.16);background:var(--surface);
     overflow:hidden;padding:0;text-align:left;width:100%;display:block;border-radius:18px;
   }
   .card:active{transform:scale(.97);border-color:var(--gold)}
@@ -225,7 +245,7 @@
     padding:12px;text-align:center;line-height:1.35;font-size:11.5px;color:var(--muted);background:var(--surface3);
   }
   .card .miss b{font-weight:500;color:var(--text)}
-  .grid.full .card .pricetag{position:absolute;left:0;bottom:0;background:rgba(13,10,11,.9);color:var(--green);
+  .grid.full .card .pricetag{position:absolute;left:0;bottom:0;background:rgba(var(--bg-rgb),.9);color:var(--green);
     font-size:11px;padding:4px 9px;border-top-right-radius:12px;font-weight:600}
   .grid.art .card .pricetag{display:none}
   /* add-card search hits: the whole card, the way you recognise it on a shelf — but the
@@ -237,19 +257,19 @@
 
   /* ---------- add panel ---------- */
   .pickrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
-           padding:11px 0;border-bottom:1px solid rgba(217,180,91,.12)}
+           padding:11px 0;border-bottom:1px solid rgba(var(--gold-rgb),.12)}
   .pickl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
   .stepper{display:flex;align-items:center;gap:12px}
   .stepper b{font-family:var(--f-display);font-size:20px;color:var(--gold);min-width:22px;text-align:center}
-  .seg{display:flex;border:1px solid rgba(217,180,91,.3);border-radius:12px;overflow:hidden}
+  .seg{display:flex;border:1px solid rgba(var(--gold-rgb),.3);border-radius:12px;overflow:hidden}
   .segb{padding:7px 15px;font-size:12.5px;color:var(--muted);background:none}
-  .segb.on{background:var(--gold);color:#1a1311;font-weight:600}
+  .segb.on{background:var(--gold);color:var(--on-gold);font-weight:600}
   .segb:disabled{opacity:.3}
   .pickinp{width:auto;margin:0;padding:7px 10px;font-size:13px}
   /* printings scroll sideways: a card can have thirty, and they must not push the
      Add button off the bottom of the sheet */
   .printstrip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
-  .pchip{flex:0 0 108px;border:1px solid rgba(217,180,91,.2);border-radius:14px;overflow:hidden;
+  .pchip{flex:0 0 108px;border:1px solid rgba(var(--gold-rgb),.2);border-radius:14px;overflow:hidden;
          background:var(--surface);padding:0;text-align:left}
   .pchip.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
   .pchip img{width:100%;aspect-ratio:626/457;object-fit:cover;display:block;background:var(--surface3)}
@@ -264,7 +284,7 @@
     display:none;align-items:center;justify-content:center;font-size:15px;z-index:4}
   body.editing .del{display:flex}
   .tick{position:absolute;top:8px;left:8px;width:32px;height:32px;border-radius:50%;
-        background:rgba(13,10,11,.8);border:1px solid rgba(217,180,91,.35);color:var(--gold);
+        background:rgba(var(--bg-rgb),.8);border:1px solid rgba(var(--gold-rgb),.35);color:var(--gold);
         font-size:15px;display:flex;align-items:center;justify-content:center;z-index:4}
   .card.got{border-color:var(--green)}
   .card.got img{opacity:.4}
@@ -278,8 +298,8 @@
     bottom:calc(14px + var(--sab));
     width:min(430px, calc(100% - 28px - var(--sal) - var(--sar)));
     padding:7px;border-radius:34px;
-    background:rgba(30,22,19,.82);
-    border:1px solid rgba(227,183,101,.16);
+    background:rgba(var(--surface-rgb),.82);
+    border:1px solid rgba(var(--gold-rgb),.16);
     box-shadow:0 10px 34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
     -webkit-backdrop-filter:saturate(170%) blur(22px); backdrop-filter:saturate(170%) blur(22px);
   }
@@ -305,7 +325,7 @@
   body.life .appbar, body.life .tabs, body.life .status, body.life .hazard{display:none}
   body.life #main{padding:0;max-width:none}
   body.life{overflow:hidden}
-  .lifewrap{position:fixed;inset:0;display:grid;gap:6px;padding:6px;background:#0a0708;z-index:60}
+  .lifewrap{position:fixed;inset:0;display:grid;gap:6px;padding:6px;background:var(--life-bg);z-index:60}
   .seat{position:relative;border-radius:24px;display:flex;align-items:center;justify-content:center;
         overflow:hidden;color:#12100f;min-height:0}
   .seat.flip{transform:rotate(180deg)}
@@ -325,14 +345,14 @@
   .seat .out{position:absolute;inset:auto 0 18px;text-align:center;font-size:13px;
              letter-spacing:.22em;font-weight:700;pointer-events:none}
   .lifehub{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:70;
-           width:62px;height:62px;border-radius:20px;background:#141011;color:var(--gold);
-           border:2px solid rgba(227,183,101,.5);font-size:22px;box-shadow:0 6px 24px rgba(0,0,0,.6)}
-  .lifemenu{position:fixed;inset:0;z-index:69;background:rgba(6,4,5,.82);display:flex;
+           width:62px;height:62px;border-radius:20px;background:var(--surface);color:var(--gold);
+           border:2px solid rgba(var(--gold-rgb),.5);font-size:22px;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  .lifemenu{position:fixed;inset:0;z-index:69;background:rgba(var(--bg-rgb),.88);display:flex;
             align-items:center;justify-content:center}
   .lifemenu .inner{display:grid;gap:10px;width:min(300px,80vw)}
   /* commander damage / counters panel, opened from a seat */
   .cmdgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin-top:10px}
-  .cmdcell{border:1px solid rgba(217,180,91,.25);border-radius:16px;padding:10px;text-align:center}
+  .cmdcell{border:1px solid rgba(var(--gold-rgb),.25);border-radius:16px;padding:10px;text-align:center}
   .cmdcell b{display:block;font-family:var(--f-display);font-size:26px;color:var(--gold);margin:4px 0}
   .cmdcell .who{font-size:10.5px;color:var(--muted);letter-spacing:.06em}
   .cmdcell.lethal{border-color:var(--red)}
@@ -340,21 +360,21 @@
   .cmdrow{display:flex;gap:8px;justify-content:center;margin-top:4px}
 
   /* ---------- sheet ---------- */
-  .modal{position:fixed;inset:0;z-index:95;display:none;background:rgba(5,3,4,.8);
+  .modal{position:fixed;inset:0;z-index:95;display:none;background:rgba(var(--bg-rgb),.86);
          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
   .modal.live{display:block}
   .sheet{
     position:absolute;left:0;right:0;bottom:0;top:36px;background:var(--surface);
-    border-top:1px solid rgba(217,180,91,.3);border-radius:26px 26px 0 0;overflow-y:auto;
+    border-top:1px solid rgba(var(--gold-rgb),.3);border-radius:26px 26px 0 0;overflow-y:auto;
     -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
     padding:0 calc(18px + var(--sar)) calc(34px + var(--sab)) calc(18px + var(--sal));
     animation:up .3s cubic-bezier(.22,1,.36,1);
   }
   @keyframes up{from{transform:translateY(100%)}to{transform:none}}
   .grab{position:sticky;top:0;z-index:5;background:var(--surface);padding:11px 0 8px;margin:0 -18px 6px;display:flex;justify-content:center}
-  .grab i{width:44px;height:5px;border-radius:3px;background:rgba(217,180,91,.35);display:block}
+  .grab i{width:44px;height:5px;border-radius:3px;background:rgba(var(--gold-rgb),.35);display:block}
   .x{position:sticky;top:8px;float:right;z-index:6;width:40px;height:40px;border-radius:50%;
-     background:var(--surface3);border:1px solid rgba(217,180,91,.28);color:var(--gold);font-size:18px;
+     background:var(--surface3);border:1px solid rgba(var(--gold-rgb),.28);color:var(--gold);font-size:18px;
      display:flex;align-items:center;justify-content:center}
   #sheet img{width:100%;border-radius:16px;display:block;margin-bottom:14px}
   #sheet h3{font-family:var(--f-display);font-size:22px;color:var(--text);font-weight:400;margin-bottom:5px}
@@ -391,11 +411,11 @@
 
   /* ---------- forms ---------- */
   label{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
-  .inp{width:100%;height:50px;background:var(--surface2);border:1px solid rgba(217,180,91,.2);border-radius:16px;
+  .inp{width:100%;height:50px;background:var(--surface2);border:1px solid rgba(var(--gold-rgb),.2);border-radius:16px;
        color:var(--text);padding:0 15px;font-size:16px}
   .inp:focus{outline:none;border-color:var(--gold)}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;
-    border:1px solid rgba(217,180,91,.25);border-radius:16px;background:var(--surface2);font-size:13.5px;color:var(--text)}
+    border:1px solid rgba(var(--gold-rgb),.25);border-radius:16px;background:var(--surface2);font-size:13.5px;color:var(--text)}
   .btn:active{background:var(--gold);color:var(--bg)}
   .btn.primary{background:linear-gradient(135deg,var(--gold),var(--ember));color:var(--bg);border:none;font-weight:700}
   .btn.wide{width:100%;margin-top:18px}
@@ -408,10 +428,10 @@
   .artsbar{display:flex;flex-direction:column;align-items:center;gap:8px;margin:18px 0 6px}
   .artsbtn{
     min-height:40px;padding:0 22px;border-radius:20px;font-size:13px;font-weight:600;
-    background:var(--surface2);border:1px solid rgba(227,183,101,.30);color:var(--gold);
+    background:var(--surface2);border:1px solid rgba(var(--gold-rgb),.30);color:var(--gold);
     display:inline-flex;align-items:center;gap:8px;
   }
-  .artsbtn:active{background:var(--gold);color:#1a1311}
+  .artsbtn:active{background:var(--gold);color:var(--on-gold)}
   .card.owned{outline:2px solid var(--gold);outline-offset:-2px}
   .card.picked{outline:3px solid var(--green);outline-offset:-3px}
   .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
@@ -431,6 +451,19 @@
   .empty{text-align:center;padding:44px 22px;color:var(--muted);font-size:14px;line-height:1.75}
   footer{display:none}
 
+  /* ---------- theme picker ---------- */
+  .thgrp{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+         margin:18px 0 9px;display:flex;align-items:center;gap:9px}
+  .thgrp::after{content:"";flex:1;height:1px;background:var(--line)}
+  .throw{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+  .thb{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:14px;min-height:44px;
+       border:1px solid rgba(var(--gold-rgb),.18);background:var(--surface2);text-align:left}
+  .thb.on{border-color:var(--gold);background:var(--gold-glow)}
+  .thsw{display:flex;flex:0 0 auto;border-radius:999px;overflow:hidden;
+        box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+  .thsw i{width:8px;height:19px;display:block}
+  .thnm{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
   @media (min-width:430px){ .grid.full{grid-template-columns:repeat(3,1fr)} }
   @media (min-width:760px){
     /* the bubble stays a bubble on desktop — it just gets a little roomier */
@@ -447,14 +480,14 @@
     .search{width:300px}
     .chips{margin-top:0;flex-wrap:wrap;overflow:visible}
     .sheet{position:relative;margin:4vh auto;max-width:920px;top:0;bottom:auto;max-height:92vh;
-           border-radius:24px;border:1px solid rgba(217,180,91,.3);padding:26px;animation:fade .2s}
+           border-radius:24px;border:1px solid rgba(var(--gold-rgb),.3);padding:26px;animation:fade .2s}
     .modal.live{display:flex;align-items:flex-start;justify-content:center;overflow:auto}
     .grab{display:none}
     #sheet.card-detail{display:grid;grid-template-columns:320px 1fr;gap:26px}
     #sheet.card-detail img{margin-bottom:0}
   }
   @media (hover:hover) and (pointer:fine){
-    .mbtn:hover,.lrow:hover{background:var(--surface2);border-color:rgba(217,180,91,.4)}
+    .mbtn:hover,.lrow:hover{background:var(--surface2);border-color:rgba(var(--gold-rgb),.4)}
     .card:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 12px 28px rgba(0,0,0,.6)}
     .icobtn:hover{background:var(--surface3)}
     .chip:hover{color:var(--text)}
@@ -520,7 +553,146 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-01 · deck settings';
+const BUILD='2026.08.16-02 · colour identities';
+
+/* ==========================================================
+   1b. THEMES — the Magic colour identities
+   ==========================================================
+   An identity is three decisions: the accent that carries the interface, a second accent
+   for the two-tone flourishes, and how the near-black background is tinted. Everything
+   else is derived. Thirty-two hand-mixed palettes would be thirty-two chances to get
+   contrast wrong, and a derived one cannot drift from the rule.
+
+   Two colours deliberately do NOT move with the theme. `--red` means danger — delete,
+   the Devoured tab — and `--green` means money. Those are semantics, not decoration: a
+   price that turns blue under Izzet reads as a hyperlink, and a delete button that turns
+   green reads as safe. The background blooms get their own `--amb*` channels precisely so
+   the ambience can follow the theme while those two stay put.
+
+   `jund` is the exception that proves the rule: it is the original hand-tuned Korvold
+   palette, so it applies *no* overrides at all and lets :root stand as written. */
+const MANA={
+  W:{n:'White',h:44 ,s:48,l:78},
+  U:{n:'Blue' ,h:206,s:64,l:62},
+  B:{n:'Black',h:279,s:28,l:60},   /* an accent has to be legible on near-black, and pure */
+  R:{n:'Red'  ,h:12 ,s:76,l:58},   /* black cannot be; Magic's own black mana reads as */
+  G:{n:'Green',h:106,s:36,l:50}    /* amethyst on card frames, so amethyst it is */
+};
+const STEEL={n:'Colourless',h:220,s:9,l:70};
+const GOLDEN={n:'Gold',h:42,s:70,l:64};
+
+const THEMES=[
+  {id:'white',   name:'White',       c:'W',     g:'Mono'},
+  {id:'blue',    name:'Blue',        c:'U',     g:'Mono'},
+  {id:'black',   name:'Black',       c:'B',     g:'Mono'},
+  {id:'red',     name:'Red',         c:'R',     g:'Mono'},
+  {id:'green',   name:'Green',       c:'G',     g:'Mono'},
+
+  {id:'azorius', name:'Azorius',     c:'WU',    g:'Guild'},
+  {id:'dimir',   name:'Dimir',       c:'UB',    g:'Guild'},
+  {id:'rakdos',  name:'Rakdos',      c:'BR',    g:'Guild'},
+  {id:'gruul',   name:'Gruul',       c:'RG',    g:'Guild'},
+  {id:'selesnya',name:'Selesnya',    c:'GW',    g:'Guild'},
+  {id:'orzhov',  name:'Orzhov',      c:'WB',    g:'Guild'},
+  {id:'izzet',   name:'Izzet',       c:'UR',    g:'Guild'},
+  {id:'golgari', name:'Golgari',     c:'BG',    g:'Guild'},
+  {id:'boros',   name:'Boros',       c:'RW',    g:'Guild'},
+  {id:'simic',   name:'Simic',       c:'GU',    g:'Guild'},
+
+  {id:'bant',    name:'Bant',        c:'GWU',   g:'Shard'},
+  {id:'esper',   name:'Esper',       c:'WUB',   g:'Shard'},
+  {id:'grixis',  name:'Grixis',      c:'UBR',   g:'Shard'},
+  {id:'jund',    name:'Jund',        c:'BRG',   g:'Shard'},
+  {id:'naya',    name:'Naya',        c:'RGW',   g:'Shard'},
+
+  {id:'abzan',   name:'Abzan',       c:'WBG',   g:'Wedge'},
+  {id:'jeskai',  name:'Jeskai',      c:'URW',   g:'Wedge'},
+  {id:'sultai',  name:'Sultai',      c:'BGU',   g:'Wedge'},
+  {id:'mardu',   name:'Mardu',       c:'RWB',   g:'Wedge'},
+  {id:'temur',   name:'Temur',       c:'GUR',   g:'Wedge'},
+
+  {id:'glint',   name:'Glint-Eye',   c:'UBRG',  g:'Four'},
+  {id:'dune',    name:'Dune-Brood',  c:'WBRG',  g:'Four'},
+  {id:'ink',     name:'Ink-Treader', c:'WURG',  g:'Four'},
+  {id:'witch',   name:'Witch-Maw',   c:'WUBG',  g:'Four'},
+  {id:'yore',    name:'Yore-Tiller', c:'WUBR',  g:'Four'},
+
+  {id:'wubrg',   name:'Five-Colour', c:'WUBRG', g:'Five'},
+  {id:'eldrazi', name:'Eldrazi',     c:'',      g:'Five'}
+];
+
+/* Culori-free HSL→RGB. The rgb triples matter as much as the hex: CSS cannot fade a hex
+   held in a variable, so every "accent at 20%" in the stylesheet is rgba(var(--x-rgb),.2). */
+function hsl2rgb(h,s,l){
+  s/=100; l/=100;
+  const a=s*Math.min(l,1-l), k=n=>(n+h/30)%12;
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));
+  return [f(0),f(8),f(4)].map(v=>Math.round(v*255));
+}
+const hx=(h,s,l)=>'#'+hsl2rgb(h,s,l).map(v=>v.toString(16).padStart(2,'0')).join('');
+const tr=(h,s,l)=>hsl2rgb(h,s,l).join(',');
+const manaOf=t=>t.c?[...t.c].map(k=>MANA[k]):[STEEL];
+
+/* Hue is an angle, so averaging it arithmetically is wrong at the wrap — 350 and 10 average
+   to 180, the exact opposite of the right answer. Sum unit vectors instead. When they very
+   nearly cancel (five-colour, and any identity spread evenly round the wheel) the mean hue
+   is meaningless noise, so the caller's fallback is used instead. */
+function meanHue(cs,fallback){
+  let x=0,y=0;
+  cs.forEach(c=>{ x+=Math.cos(c.h*Math.PI/180); y+=Math.sin(c.h*Math.PI/180); });
+  if(Math.hypot(x,y)/cs.length<.18) return fallback;
+  return ((Math.atan2(y,x)*180/Math.PI)+360)%360;
+}
+
+function themeVars(t){
+  const cs=manaOf(t);
+  /* Five-colour reads as gold on a Magic card, not as white — taking cs[0] would give it
+     a bone accent indistinguishable from Esper. */
+  const a1=t.c.length===5?GOLDEN:cs[0];
+  const a2=cs.length>1?cs[cs.length-1]
+                      :{h:a1.h,s:Math.min(92,a1.s+16),l:Math.max(28,a1.l-24)};
+  /* The background is tinted by the identity as a whole, not by its first colour. Keying
+     it to cs[0] made Orzhov, Esper and mono-White the same warm near-black, because all
+     three lead with W — only the stripe told them apart. */
+  const bh=meanHue(cs,a1.h), bs=Math.min(24,Math.max(9,Math.round(a1.s*.32)));
+  const stops=cs.map(c=>hx(c.h,c.s,c.l));
+  return {
+    '--bg':hx(bh,bs,5.5),          '--bg-rgb':tr(bh,bs,5.5),
+    '--surface':hx(bh,bs,9),       '--surface2':hx(bh,bs,11.6),
+    '--surface3':hx(bh,bs,15.5),   '--surface-rgb':tr(bh,bs,10),
+    '--life-bg':hx(bh,bs,3.5),
+    '--on-gold':hx(bh,bs,9),
+    '--text':hx(bh,30,92),         '--muted':hx(bh,13,59),
+    '--gold':hx(a1.h,a1.s,a1.l),   '--gold-rgb':tr(a1.h,a1.s,a1.l),
+    '--gold-dim':hx(a1.h,a1.s*.68,a1.l*.59),
+    '--gold-soft':hx(a1.h,a1.s*.6,16),
+    '--ember':hx(a2.h,a2.s,a2.l),
+    '--amb1-rgb':tr(a1.h,a1.s*.8,a1.l*.6),
+    '--amb2-rgb':tr(a2.h,a2.s*.8,a2.l*.6),
+    '--hero1':hx(bh,bs+6,12), '--hero2':hx(a1.h,a1.s*.5,20), '--hero3':hx(a2.h,a2.s*.4,17),
+    '--hero-text':hx(bh,40,93),    '--hero-text-rgb':tr(bh,40,93),
+    /* the stripe is the identity itself: Izzet runs blue to red, five-colour is a rainbow,
+       and a mono theme has only one stop, so it ramps dim to bright instead */
+    '--hazard':'linear-gradient(90deg,'+
+      (stops.length>1?stops:[hx(a1.h,a1.s,a1.l*.55),stops[0]]).join(',')+')'
+  };
+}
+
+const THEME_KEYS=Object.keys(themeVars(THEMES.find(t=>t.id==='izzet')));
+const findTheme=id=>THEMES.find(t=>t.id===id)||THEMES.find(t=>t.id==='jund');
+
+function applyTheme(id){
+  const t=findTheme(id), root=document.documentElement;
+  // clear the outgoing theme by name rather than wiping cssText, so nothing else that
+  // ever wants an inline property on <html> gets quietly destroyed by a theme switch
+  THEME_KEYS.forEach(k=>root.style.removeProperty(k));
+  if(t.id!=='jund'){ const v=themeVars(t); for(const k in v) root.style.setProperty(k,v[k]); }
+  // iOS paints the status bar and the app-switcher card from this, so a themed PWA that
+  // doesn't update it keeps a black notch over a blue app
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.content=(getComputedStyle(root).getPropertyValue('--bg')||'').trim()||'#0f0b0a';
+  return t;
+}
 
 const T={LAND:'Land',MANA:'Mana',ENGINE:'Engine',COMBO:'Combo',CLONE:'Clone',TUTOR:'Tutor',INT:'Interaction',REC:'Recursion',ADD:'Added'};
 
@@ -2727,8 +2899,27 @@ function sheetAddCard(deckId){
     <button class="btn primary wide" id="acSave">Look up &amp; add</button>`);
 }
 
+const THEME_GROUPS=[['Mono','One colour'],['Guild','Two colours — the guilds'],
+                    ['Shard','Three, allied — the shards'],['Wedge','Three, enemy — the wedges'],
+                    ['Four','Four colours'],['Five','Everything, and nothing']];
+function themePicker(){
+  const cur=STATE.theme||'jund';
+  return THEME_GROUPS.map(([g,label])=>`
+    <div class="thgrp">${esc(label)}</div>
+    <div class="throw">${THEMES.filter(t=>t.g===g).map(t=>{
+      const sw=manaOf(t).map(c=>hx(c.h,c.s,c.l));
+      return `<button class="thb${cur===t.id?' on':''}" data-theme="${esc(t.id)}">
+        <span class="thsw">${sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
+        <span class="thnm">${esc(t.name)}</span></button>`;
+    }).join('')}</div>`).join('');
+}
+
 function sheetSettings(){
   openSheet(`<h3>Settings</h3><div class="tl">Build ${BUILD} · data &amp; backup</div>
+    <label>Theme — <span id="themeNow" style="color:var(--gold)">${esc(findTheme(STATE.theme).name)}</span></label>
+    <div class="note" style="margin-top:0">Every Magic colour identity. Prices stay green and
+      delete stays red in all of them — those are meanings, not decoration.</div>
+    ${themePicker()}
     <div class="note" style="margin-top:12px">Your edits save automatically to this device.
       ${STORAGE_OK?'Storage is working.':'<b style="color:#ff8a8a">Storage is blocked here</b> — open the file in Safari for saving to work.'}
       iOS can clear website data for sites you haven\\'t visited in a while, so export a backup now and then. Adding this to your Home Screen makes storage much stickier.</div>
@@ -2832,6 +3023,18 @@ document.addEventListener('click',async e=>{
   const wrow=t.closest('[data-wish]'); if(wrow) return go({v:'wish',id:wrow.dataset.wish});
   if(t.closest('#wishEdit')) return sheetEditWish(here().id);
   if(t.closest('#deckEdit')) return sheetEditDeck(here().id);
+  /* Repaint the swatches in place rather than reopening the sheet: the whole point is to
+     watch the app change colour behind it, and a re-render would throw away the scroll
+     position you used to reach the swatch you just tapped. */
+  const th=t.closest('[data-theme]');
+  if(th){
+    STATE.theme=th.dataset.theme; save(); applyTheme(STATE.theme);
+    document.querySelectorAll('#sheet [data-theme]')
+      .forEach(b=>b.classList.toggle('on',b.dataset.theme===STATE.theme));
+    const lbl=document.getElementById('themeNow');
+    if(lbl) lbl.textContent=findTheme(STATE.theme).name;
+    return;
+  }
   // artist heading in Signing -> that illustrator's whole body of work
   const ago=t.closest('[data-artistgo]');
   if(ago) return go({v:'arts',subject:ago.dataset.artistgo,mode:'artist',artist:ago.dataset.artistgo,deck:''});
@@ -3202,6 +3405,9 @@ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostn
 }
 
 load();
+// the theme is saved state too, and it has to land before the first render or the app
+// flashes Jund on its way to whatever the user actually chose
+applyTheme(STATE.theme);
 // view preferences are saved state, so they have to be applied after it loads
 if(STATE.view){
   if(STATE.view.mode) MODE=STATE.view.mode;
