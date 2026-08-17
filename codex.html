@@ -646,6 +646,51 @@
     @keyframes dock{from{transform:translateX(28px);opacity:0}to{transform:none;opacity:1}}
   }
 
+  /* ---------- deck health ---------- */
+  .health{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+          border:1px solid rgba(var(--gold-rgb),.18);background:var(--surface);
+          border-radius:18px;padding:12px 14px;margin:0 0 16px;min-height:56px;position:relative}
+  .health .hv{font-size:13.5px;color:var(--text);font-weight:500;flex:0 0 auto}
+  .health.ok   .hv{color:var(--green)}
+  .health.warn .hv{color:#ffb26b}
+  .health.wait .hv{color:var(--muted)}
+  .health .hb{font-size:11.5px;color:var(--muted);flex:1;min-width:0;
+              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;
+              padding-right:14px}
+  .health .hc{position:absolute;right:13px;color:var(--gold);opacity:.5;font-size:18px}
+  @media (max-width:520px){
+    .health{flex-direction:column;align-items:flex-start;gap:3px;padding-right:30px}
+    .health .hb{text-align:left;padding-right:0;width:100%}
+  }
+  .prob{border:1px solid rgba(255,178,107,.28);background:rgba(255,178,107,.06);
+        border-radius:14px;padding:11px 13px;margin-top:9px}
+  .prob.ok{border-color:rgba(var(--green-rgb),.35);background:rgba(var(--green-rgb),.07)}
+  .prob b{display:block;font-size:13.5px;font-weight:500;color:#ffb26b}
+  .prob.ok b{color:var(--green)}
+  .prob span{display:block;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .prob .ot{margin:9px 0 0;background:rgba(0,0,0,.22)}
+  .gclist{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .gcchip{font-size:11.5px;color:var(--ember);border:1px solid rgba(224,116,47,.35);
+          border-radius:999px;padding:4px 10px;white-space:nowrap}
+  .brow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:11px}
+  .bbtn{border:1px solid rgba(var(--gold-rgb),.2);background:var(--surface2);border-radius:14px;
+        padding:9px 4px;min-height:58px;display:flex;flex-direction:column;
+        align-items:center;justify-content:center;gap:3px}
+  .bbtn b{font-family:var(--f-display);font-size:19px;font-weight:400;color:var(--text)}
+  .bbtn span{font-size:9px;letter-spacing:.04em;color:var(--muted);text-align:center;line-height:1.2}
+  .bbtn.on{border-color:var(--gold);background:var(--gold-glow)}
+  .bbtn.on b{color:var(--gold)}
+  /* the estimate and a choice you made should not look identical */
+  .bbtn.set{border-width:2px}
+  .btn[disabled]{opacity:.45}
+
+  /* ---------- game changers ---------- */
+  .gcflag{position:absolute;top:8px;left:8px;z-index:4;width:24px;height:24px;
+          border-radius:50%;background:var(--ember);color:var(--on-gold);
+          display:flex;align-items:center;justify-content:center;font-size:11px;
+          box-shadow:0 2px 7px rgba(0,0,0,.55)}
+  .gcdot{color:var(--ember);margin-right:6px;font-size:10px}
+
   /* ---------- compact table (desktop view mode) ---------- */
   .ctab{width:100%;border-collapse:collapse;margin:0 0 18px;font-size:13px}
   .ctab th{text-align:left;font-weight:400;font-size:10px;letter-spacing:.13em;
@@ -743,7 +788,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-11 · remove from card';
+const BUILD='2026.08.16-12 · legality & brackets';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -1513,6 +1558,98 @@ function deckCover(d){
    textContent, so the glyph can't be markup there). */
 const deckLabel=d=>(d.icon?d.icon+' ':'')+d.name;
 
+/* ==========================================================
+   COMMANDER LEGALITY AND BRACKETS
+   ==========================================================
+   Every check below is answered from data Scryfall already put in CACHE — legalities,
+   color_identity, type_line, oracle_text and game_changer — so none of it costs a request.
+   `game_changer` is Scryfall's own flag for Wizards' Game Changer list, which is why there
+   is no hardcoded list here to go stale the next time that list is revised.
+
+   The honest part is `unknown`. A deck whose cards haven't loaded cannot be pronounced
+   legal, and saying "legal" from four cached cards out of a hundred would be worse than
+   saying nothing. Every caller reports what it couldn't see. */
+const BRACKETS=[
+  {n:1,name:'Exhibition',blurb:'Ultra-casual, built around a theme. No Game Changers, no tutors, no two-card combos, no mass land denial.'},
+  {n:2,name:'Core',blurb:'About the power of a modern preconstructed deck. No Game Changers, no mass land denial, no chained extra turns.'},
+  {n:3,name:'Upgraded',blurb:'Beyond a precon. Up to three Game Changers; two-card combos only as a late-game finish.'},
+  {n:4,name:'Optimized',blurb:'High power. No restrictions beyond the Commander ban list.'},
+  {n:5,name:'cEDH',blurb:'Tournament Commander. The deck is built to win, against other decks built to win.'}
+];
+const bracketOf=n=>BRACKETS.find(b=>b.n===n)||BRACKETS[1];
+
+/* Relentless Rats and friends say so on the card, and Nazgûl and Seven Dwarves cap the
+   number rather than lifting it — one pattern covers all of them, and it stays right for
+   cards printed after this was written. */
+const ANY_NUMBER=/A deck can have (any number of|up to \w+) cards named/i;
+const isBasicLand=c=>/\bBasic\b/.test(c.type_line||'') && /\bLand\b/.test(c.type_line||'');
+
+function deckCheck(d){
+  const entries=listEntries(d);
+  const cmds=deckCommanders(d);
+  const problems=[]; let unknown=0;
+
+  const total=countEntries(d);
+  if(total!==100) problems.push({k:'size',
+    t:`${total} cards`, why:'A Commander deck is exactly 100, commander included.'});
+
+  if(!cmds.length) problems.push({k:'cmd',t:'No commander set',
+    why:'Open a legendary creature in this deck and tap “Set as commander”.'});
+
+  // the commander's identity is the yardstick for every other card, so if it isn't
+  // loaded yet the colour check is skipped rather than guessed
+  const ci=new Set(); let ciKnown=cmds.length>0;
+  cmds.forEach(n=>{
+    const c=CACHE.get(key(n));
+    // no unknown++ here: the commander is also one of the entries below, and counting it
+    // in both places drove `checked` negative — "checking, -1 of 99 cards loaded"
+    if(!c){ ciKnown=false; return; }
+    if(!canBeCommander(c)) problems.push({k:'cmd',t:`${n} can’t be a commander`,
+      why:'It isn’t a legendary creature and doesn’t say it can be your commander.'});
+    (c.color_identity||[]).forEach(x=>ci.add(x));
+  });
+
+  const banned=[], offColour=[], counts=new Map();
+  entries.forEach(e=>{
+    const c=CACHE.get(key(e.n));
+    if(!c){ unknown++; return; }
+    const leg=(c.legalities||{}).commander;
+    if(leg==='banned') banned.push(e.n);
+    else if(leg==='not_legal') banned.push(e.n+' (not a Commander-legal card)');
+    if(ciKnown && (c.color_identity||[]).some(x=>!ci.has(x))) offColour.push(e.n);
+    if(!isBasicLand(c) && !ANY_NUMBER.test(c.oracle_text||'')){
+      const k=key(e.n);
+      counts.set(k,{n:e.n,q:(counts.get(k)?counts.get(k).q:0)+entryQty(e)});
+    }
+  });
+  const dupes=[...counts.values()].filter(x=>x.q>1);
+
+  if(banned.length)   problems.push({k:'ban',t:`${banned.length} card${banned.length>1?'s':''} not legal in Commander`,list:banned});
+  if(offColour.length)problems.push({k:'ci', t:`${offColour.length} card${offColour.length>1?'s':''} outside your commander’s colour identity`,list:offColour});
+  if(dupes.length)    problems.push({k:'dup',t:`${dupes.length} card${dupes.length>1?'s':''} in multiples`,
+                                     list:dupes.map(x=>`${x.n} ×${x.q}`),
+                                     why:'Commander is singleton apart from basic lands.'});
+  return {problems, unknown, identity:[...ci], checked:entries.length-unknown, total:entries.length};
+}
+
+function deckGC(d){
+  const gc=[]; let unknown=0;
+  listEntries(d).forEach(e=>{
+    const c=CACHE.get(key(e.n));
+    if(!c){ unknown++; return; }
+    if(c.game_changer) gc.push(e.n);
+  });
+  gc.sort((a,b)=>a.localeCompare(b));
+  /* The count is the only bracket signal that can be read from card data alone. Extra
+     turns, mass land denial and two-card combos are all bracket criteria too and none of
+     them are a field on a card — so this estimates, says so, and the deck's owner has the
+     final say. Bracket 1 is never guessed: what separates it from 2 is the absence of
+     tutors and combos, which is exactly what can't be seen here. */
+  const est = gc.length===0 ? 2 : gc.length<=3 ? 3 : 4;
+  return {gc, est, unknown};
+}
+const deckBracket=d=>d.bracket||deckGC(d).est;
+
 const findDeck=id=>STATE.decks.find(d=>d.id===id);
 const findWish=id=>(STATE.wishlists||[]).find(w=>w.id===id);
 /* Decks and wishlists share a shape, so anything that just needs "the list with this
@@ -1707,6 +1844,29 @@ function vDecks(){
   loadCards(STATE.decks.flatMap(deckCommanders));
 }
 
+/* A one-line verdict that is always visible, because "is this deck actually legal" is not
+   a question you should have to go looking for. It never claims a clean bill of health it
+   can't back: until the cards are cached it says so instead. */
+function healthBand(d){
+  const chk=deckCheck(d), br=deckGC(d), n=deckBracket(d), b=bracketOf(n);
+  const loading=chk.unknown>0;
+  const bad=chk.problems.length;
+  const state=loading?'wait':bad?'warn':'ok';
+  const verdict=loading ? `Checking — ${chk.checked} of ${chk.total} cards loaded`
+              : bad     ? `${bad} thing${bad>1?'':''} to fix`
+                        : 'Legal for Commander';
+  /* An estimate drawn from cards that haven't loaded is not an estimate. With nothing
+     cached this said "Bracket 2 · Core" — the answer for a deck with no Game Changers,
+     which is indistinguishable from a deck nobody has counted yet. */
+  const brText = d.bracket ? `Bracket ${b.n} · ${esc(b.name)} · your choice`
+               : br.unknown ? 'Bracket · still counting Game Changers'
+               : `Bracket ${b.n} · ${esc(b.name)} · ${br.gc.length} Game Changer${br.gc.length===1?'':'s'}`;
+  return `<button class="health ${state}" id="healthBtn">
+    <span class="hv">${state==='ok'?'✓':state==='warn'?'⚠':'⋯'} ${esc(verdict)}</span>
+    <span class="hb">${brText}</span>
+    <span class="hc">›</span></button>`;
+}
+
 /* ---------- one deck ---------- */
 function vDeck(r){
   _repaint=()=>{ if(here().v==='deck') vDeck(here()); };
@@ -1751,6 +1911,7 @@ function vDeck(r){
         </div>
       </div>
     </div>
+    ${healthBand(d)}
     ${body||'<div class="empty">Nothing matches that filter.</div>'}`;
   loadCards(allNames);
 }
@@ -2047,8 +2208,11 @@ function cardTile(c,deckId,sectName){
   else if(RAL_KEY.includes(c.n)) badge='<div class="badge combo">Key</div>';
   const img=src?`<img loading="lazy" src="${src}" alt="${esc(c.n)}">`
                 :`<div class="miss"><b>${esc(c.n)}</b><span style="font-size:8.5px;letter-spacing:.14em;opacity:.55">NO IMAGE</span></div>`;
+  // the top-left corner came free when Edit mode's ✕ went away
+  const gc=(CACHE.get(key(c.n))||{}).game_changer
+    ? '<div class="gcflag" title="Game Changer — counts towards this deck’s bracket">◆</div>' : '';
   return `<div class="card${c.foil?' foil':''}" data-card="${esc(c.n)}" ${deckId?`data-deck="${esc(deckId)}" data-sect="${esc(sectName)}"`:''}>
-    ${badge}
+    ${badge}${gc}
     ${img}${gridMode()==='full'?`<div class="pricetag">${priceCell(p)}</div>`:''}
     <div class="plate">
       <div style="min-width:0"><div class="nm">${esc(c.n)}</div>${
@@ -2072,7 +2236,7 @@ function cardTable(entries,listId){
     const q=entryQty(e);
     return `<tr data-card="${esc(e.n)}"${listId?` data-deck="${esc(listId)}"`:''}>
       <td class="q">${q>1?'×'+q:''}</td>
-      <td class="nm">${esc(e.n)}${e.foil?'<span class="fo">Foil</span>':''}${
+      <td class="nm">${c&&c.game_changer?'<span class="gcdot" title="Game Changer">◆</span>':''}${esc(e.n)}${e.foil?'<span class="fo">Foil</span>':''}${
         e.cond&&e.cond!=='NM'?`<span class="fo">${esc(e.cond)}</span>`:''}</td>
       <td class="ty">${esc(type)}</td>
       <td class="mv">${c&&c.cmc!=null?c.cmc:''}</td>
@@ -3266,6 +3430,47 @@ function sheetEditWish(id){
     <button class="btn wide" id="ewDel" data-arm="0" style="margin-top:10px;border-color:rgba(198,58,58,.6);color:#ff8a8a">Delete this wishlist</button>`);
 }
 
+function sheetHealth(id){
+  const d=findDeck(id); if(!d) return;
+  const chk=deckCheck(d), br=deckGC(d), cur=deckBracket(d), b=bracketOf(cur);
+  const list=arr=>`<div class="ot" style="font-size:13px;line-height:1.6">${arr.map(esc).join('<br>')}</div>`;
+  openSheet(`<h3>${esc(d.name)}</h3><div class="tl">Legality &amp; bracket</div>
+
+    <label>Commander legality</label>
+    ${chk.unknown?`<div class="note" style="margin-top:0">${chk.checked} of ${chk.total} cards loaded so far —
+      anything below is based on those. Leave this open a moment and it will finish.</div>`:''}
+    ${chk.problems.length
+      ? chk.problems.map(p=>`<div class="prob">
+          <b>${esc(p.t)}</b>
+          ${p.why?`<span>${esc(p.why)}</span>`:''}
+          ${p.list?list(p.list):''}</div>`).join('')
+      : `<div class="prob ok"><b>✓ Nothing wrong that I can see</b>
+          <span>100 cards, singleton, inside your commander’s colour identity, nothing banned.</span></div>`}
+
+    <label>Bracket</label>
+    <div class="note" style="margin-top:0">
+      ${br.unknown
+        ? `Still counting — ${br.unknown} card${br.unknown===1?'':'s'} haven’t loaded, so any estimate
+           would be from a partial deck. So far: <b style="color:var(--ember)">${br.gc.length}</b>.`
+        : br.gc.length
+        ? `This deck runs <b style="color:var(--ember)">${br.gc.length} Game Changer${br.gc.length===1?'':'s'}</b>, which puts the estimate at
+           <b style="color:var(--gold)">${bracketOf(br.est).n} · ${esc(bracketOf(br.est).name)}</b>.`
+        : `No Game Changers, so the estimate is <b style="color:var(--gold)">2 · Core</b>.`}
+      Only the Game Changer count can be read off the cards — extra turns, mass land denial
+      and two-card combos matter too and aren’t a field on a card, so this is a starting
+      point rather than a verdict. Set it yourself below and that sticks.
+    </div>
+    ${br.gc.length?`<div class="gclist">${br.gc.map(n=>
+      `<span class="gcchip">◆ ${esc(n)}</span>`).join('')}</div>`:''}
+
+    <div class="brow">${BRACKETS.map(x=>`
+      <button class="bbtn${cur===x.n?' on':''}${d.bracket===x.n?' set':''}" data-bracket="${x.n}">
+        <b>${x.n}</b><span>${esc(x.name)}</span></button>`).join('')}</div>
+    <div class="note" style="margin-top:10px">${esc(b.blurb)}</div>
+    <button class="btn wide" id="bracketAuto" style="margin-top:12px"${d.bracket?'':' disabled'}>
+      ${d.bracket?'Go back to the estimate':'Using the estimate'}</button>`);
+}
+
 function sheetAddCard(deckId){
   const d=findList(deckId); if(!d) return;
   openSheet(`<h3>Add Card</h3><div class="tl">to ${esc(d.name)}</div>
@@ -3412,6 +3617,18 @@ document.addEventListener('click',async e=>{
   const wrow=t.closest('[data-wish]'); if(wrow) return go({v:'wish',id:wrow.dataset.wish});
   if(t.closest('#wishEdit')) return sheetEditWish(here().id);
   if(t.closest('#deckEdit')) return sheetEditDeck(here().id);
+  if(t.closest('#healthBtn')) return sheetHealth(here().id);
+  const bk=t.closest('[data-bracket]');
+  if(bk){
+    const d=findDeck(here().id); if(!d) return;
+    d.bracket=Number(bk.dataset.bracket);
+    save(); sheetHealth(d.id); return render();
+  }
+  if(t.closest('#bracketAuto')){
+    const d=findDeck(here().id); if(!d||!d.bracket) return;
+    delete d.bracket;
+    save(); sheetHealth(d.id); return render();
+  }
   /* Repaint the swatches in place rather than reopening the sheet: the whole point is to
      watch the app change colour behind it, and a re-render would throw away the scroll
      position you used to reach the swatch you just tapped. */
