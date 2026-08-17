@@ -679,6 +679,21 @@
         color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:15px}
   .sbtn.del{border-color:rgba(198,58,58,.5);color:#ff8a8a}
 
+  /* ---------- value over time ---------- */
+  .chartbox{border:1px solid rgba(var(--gold-rgb),.16);background:var(--surface);
+            border-radius:18px;padding:12px 12px 10px}
+  .chart{display:block;width:100%;height:130px}
+  .chartfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;
+             margin-top:8px;font-size:11px;color:var(--muted)}
+  .chartfoot b{font-family:var(--f-num);font-size:12px;font-weight:400;text-align:center}
+  .chartfoot b.up{color:var(--green)} .chartfoot b.down{color:#ff8a8a}
+  .spark{display:flex;align-items:center;gap:12px;margin:0 0 14px;
+         border:1px solid rgba(var(--gold-rgb),.14);background:var(--surface);
+         border-radius:16px;padding:8px 13px}
+  .spark .chart{height:44px;flex:1}
+  .spark .sl{font-family:var(--f-num);font-size:11.5px;color:var(--muted);
+             flex:0 0 auto;white-space:nowrap}
+
   /* ---------- deck health ---------- */
   .health{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
           border:1px solid rgba(var(--gold-rgb),.18);background:var(--surface);
@@ -821,7 +836,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-17 · focus + edge snap';
+const BUILD='2026.08.16-18 · value over time';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -2164,6 +2179,8 @@ function vHome(){
         <span>${countEntries(w)} wanted${w.sub?' · '+esc(w.sub):''}</span>
       </button>`).join('')}</div>`:''}
 
+    <div id="valuepanel">${valuePanel()}</div>
+
     <div class="sech">Next</div>
     <div class="actrow">
       <button class="act" data-go="signing">
@@ -2234,6 +2251,7 @@ function paintHomeStats(){
     set('marketsub','Market'+(t.unknown?` · ${t.unknown} unpriced`:''));
     const mk=el.querySelector('[data-stat="market"]');
     if(mk){ if(t.known) countTo(mk,t.sum); else mk.innerHTML=priceCell(null); }
+    noteValueProgress();
   }
   document.querySelectorAll('[data-deckcard]').forEach(b=>{
     const d=findDeck(b.dataset.deckcard); if(!d) return;
@@ -2259,6 +2277,110 @@ function paintHomeStats(){
       pips.innerHTML=(id?[...id]:['C']).map(k=>`<i class="pip p${k}"></i>`).join('');
     }
   });
+}
+
+/* ==========================================================
+   VALUE OVER TIME
+   ==========================================================
+   Scryfall publishes today's price and nothing else — no trend, no series, nothing
+   historical (checked: usd, usd_foil, usd_etched, eur, eur_foil, tix, and no other field).
+   So the history is ours to keep, one snapshot a day, written locally and never sent
+   anywhere. It starts the day you first open this and grows from there.
+
+   The completeness guard is the whole game. Prices arrive in nine batches, and a snapshot
+   taken while they are still landing would record a collapse that never happened — the
+   chart would be a sawtooth of loading artefacts. Nothing is written until the collection
+   has essentially finished pricing. */
+const HIST=()=>STATE.history||(STATE.history=[]);
+const today=()=>new Date().toISOString().slice(0,10);
+
+/* "Everything is priced" is the wrong test — 72 of 595 cards have no USD price on Scryfall
+   at all, so a completeness rule can never fire. The real question is whether prices have
+   *stopped arriving*, so the count of priced cards is watched and the snapshot is taken
+   three seconds after it stops climbing. */
+let VAL_KNOWN=-1, VAL_TIMER=null;
+function noteValueProgress(){
+  const t=totalOfEntries(STATE.decks.flatMap(listEntries));
+  if(!t.known) return;
+  if(t.known===VAL_KNOWN){ recordValue(); return; }   // count stopped climbing: settled
+  VAL_KNOWN=t.known;
+  /* And a timer as well, because the repaint that follows the *final* batch isn't
+     guaranteed — loadCards repaints inside its loop, so the last count can arrive with no
+     further call to compare it against. Relying on the timer alone left the history empty. */
+  clearTimeout(VAL_TIMER);
+  VAL_TIMER=setTimeout(recordValue,3000);
+}
+
+function recordValue(){
+  const all=STATE.decks.flatMap(listEntries);
+  if(!all.length) return;
+  const t=totalOfEntries(all);
+  if(!t.known || t.known < all.length*0.5) return;   // barely anything loaded: not a reading
+  const h=HIST(), d=today(), sum=Math.round(t.sum*100)/100;
+  const last=h[h.length-1];
+  // rewriting today's figure every repaint would save on every price that streams in
+  if(last && last.d===d && Math.abs(last.t-sum) < Math.max(0.5,last.t*0.002)) return;
+  const decks={};
+  STATE.decks.forEach(x=>{ const v=totalOfEntries(listEntries(x)); if(v.known) decks[x.id]=Math.round(v.sum*100)/100; });
+  const rec={d,t:sum,decks};
+  if(last&&last.d===d) h[h.length-1]=rec; else h.push(rec);
+  if(h.length>400) h.splice(0,h.length-400);              // a bit over a year, daily
+  save();
+  const vp=document.getElementById('valuepanel');
+  if(vp) vp.innerHTML=valuePanel();
+}
+
+const histSeries=deckId=>HIST()
+  .map(r=>({d:r.d, v:deckId?(r.decks||{})[deckId]:r.t}))
+  .filter(p=>typeof p.v==='number');
+
+/* A plain inline SVG — no chart library, same reason there is no framework. viewBox plus
+   preserveAspectRatio="none" lets it stretch to any width while the maths stays in a fixed
+   coordinate space. */
+function lineChart(pts,h){
+  h=h||120;
+  const W=600, P=4;
+  if(pts.length<2) return '';
+  const vs=pts.map(p=>p.v);
+  let lo=Math.min(...vs), hi=Math.max(...vs);
+  if(hi-lo < hi*0.02){ const pad=Math.max(1,hi*0.02); lo-=pad; hi+=pad; }   // a flat line needs room
+  const x=i=>P+(W-P*2)*(pts.length===1?0.5:i/(pts.length-1));
+  const y=v=>h-P-(h-P*2)*((v-lo)/((hi-lo)||1));
+  const line=pts.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
+  const area=`${line} L${x(pts.length-1).toFixed(1)} ${h} L${x(0).toFixed(1)} ${h} Z`;
+  const up=pts[pts.length-1].v>=pts[0].v;
+  const col=up?'var(--green)':'var(--red)';
+  return `<svg class="chart" viewBox="0 0 ${W} ${h}" preserveAspectRatio="none" role="img"
+      aria-label="Collection value over time">
+    <path d="${area}" fill="${col}" opacity=".13"/>
+    <path d="${line}" fill="none" stroke="${col}" stroke-width="2.5"
+          vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(pts.length-1).toFixed(1)}" cy="${y(pts[pts.length-1].v).toFixed(1)}" r="4"
+            fill="${col}" vector-effect="non-scaling-stroke"/>
+  </svg>`;
+}
+
+function valuePanel(){
+  const s=histSeries();
+  if(s.length<2){
+    return `<div class="sech">Value over time</div>
+      <div class="note" style="margin-top:0">Tracking started ${s.length?'today':'when prices first load'} —
+        the chart appears once there are a couple of days to draw. Nothing leaves your phone;
+        it rides along in your backup.</div>`;
+  }
+  const first=s[0].v, last=s[s.length-1].v, diff=last-first;
+  const days=Math.max(1,Math.round((new Date(s[s.length-1].d)-new Date(s[0].d))/86400000));
+  const pc=first?(diff/first*100):0;
+  return `<div class="sech">Value over time<i>${s.length} day${s.length===1?'':'s'}</i></div>
+    <div class="chartbox">
+      ${lineChart(s,130)}
+      <div class="chartfoot">
+        <span>${esc(s[0].d)}</span>
+        <b class="${diff>=0?'up':'down'}">${diff>=0?'+':'−'}${money(Math.abs(diff)).slice(1)}
+          · ${diff>=0?'+':'−'}${Math.abs(pc).toFixed(1)}% over ${days} day${days===1?'':'s'}</b>
+        <span>${esc(s[s.length-1].d)}</span>
+      </div>
+    </div>`;
 }
 
 /* ---------- deck list ---------- */
@@ -2605,6 +2727,13 @@ function vDeck(r){
         </div>
       </div>
     </div>
+    ${(()=>{ const s=histSeries(d.id);
+      if(s.length<3) return '';
+      const diff=s[s.length-1].v-s[0].v;
+      return `<div class="spark">
+        ${lineChart(s,54)}
+        <div class="sl">${diff>=0?'+':'−'}${money(Math.abs(diff)).slice(1)} since ${esc(s[0].d)}</div>
+      </div>`; })()}
     ${healthBand(d)}
     ${body||'<div class="empty">Nothing matches that filter.</div>'}`;
   loadCards(allNames);
