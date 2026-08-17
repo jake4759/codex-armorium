@@ -143,7 +143,11 @@
   .sech{display:flex;align-items:center;gap:10px;margin:22px 0 11px;
         font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .sech i{font-family:var(--f-num);font-style:normal;font-size:11px;color:var(--gold)}
-  .sech::after{content:"";flex:1;height:1px;background:var(--line)}
+  /* the rule is generated content, so it lands after any real child — `order` puts the
+     link back on the far side of it without needing a wrapper element */
+  .sech::after{content:"";flex:1;height:1px;background:var(--line);order:1}
+  .sechlink{order:2;flex:0 0 auto;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+            color:var(--gold);padding:4px 2px}
 
   /* Explicit counts, not auto-fit. `repeat(auto-fit,minmax(150px,220px))` looks like it
      should give a phone two columns, but a definite max makes the browser count tracks at
@@ -735,7 +739,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-06 · click away';
+const BUILD='2026.08.16-07 · recent decks';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -1413,7 +1417,25 @@ function scrollTo(y){
   scroller().scrollTop=y;
   requestAnimationFrame(()=>{ scroller().scrollTop=y; });
 }
+/* Recency is recorded here rather than in vDeck, because vDeck is also `_repaint` — it
+   re-runs on every batch of prices that lands, and recording there would mean a save() per
+   batch. Every route into a deck goes through go(), whatever tapped it. */
+function touchDeck(id){
+  const cur=STATE.recent||[];
+  if(cur[0]===id) return;                       // already the most recent, nothing changed
+  STATE.recent=[id].concat(cur.filter(x=>x!==id)).slice(0,20);
+  save();
+}
+/* Most recently opened first, then decks never opened at all, so a fresh install still has
+   something on the home screen. Ids that no longer resolve — a deleted deck — drop out. */
+function recentDecks(){
+  const rec=(STATE.recent||[]).map(findDeck).filter(Boolean);
+  const seen=new Set(rec.map(d=>d.id));
+  return rec.concat(STATE.decks.filter(d=>!seen.has(d.id)));
+}
+
 function go(route,replace){
+  if(route && route.v==='deck' && route.id) touchDeck(route.id);
   here().scroll=scroller().scrollTop;
   if(replace) STACK=[route]; else STACK.push(route);
   render();
@@ -1535,11 +1557,17 @@ function vHome(){
   const movedCount=STATE.moves.reduce((a,m)=>a+m.sources.reduce((b,s)=>b+s.cards.length,0),0);
   const ws=STATE.wishlists||[];
   const signed=Object.values(STATE.signed||{}).filter(Boolean).length;
+  /* Two rows of two on a phone, two rows of five on a monitor — a full shelf either way
+     rather than one number chosen for both and wrong on one of them. The Decks tab is
+     still the complete list, and the header links to it once anything is hidden. */
+  const shown=recentDecks().slice(0,wide()?10:4);
   document.getElementById('main').innerHTML=`
     <div class="stats" id="homestats">${statTiles()}</div>
 
-    <div class="sech">Your decks<i>${STATE.decks.length}</i></div>
-    ${STATE.decks.length?`<div class="deckstrip">${STATE.decks.map(d=>`
+    <div class="sech"><span>Recent decks</span><i>${shown.length} of ${STATE.decks.length}</i>${
+      shown.length<STATE.decks.length
+        ? `<button class="sechlink" data-go="decks">All ${STATE.decks.length} →</button>`:''}</div>
+    ${STATE.decks.length?`<div class="deckstrip">${shown.map(d=>`
       <button class="dcard" data-deck="${esc(d.id)}" data-deckcard="${esc(d.id)}">
         <div class="por"></div>
         <div class="dcb">
@@ -3733,6 +3761,16 @@ document.addEventListener('wheel',e=>{
 },{passive:false});
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
+
+/* Several things are decided once, at render time, from which side of 1000px we're on:
+   how many decks the home strip shows, and whether `table` mode is honoured or degraded.
+   Dragging a desktop window narrow used to leave both stale. Only a *crossing* repaints —
+   resize fires continuously and a render per pixel would be absurd. */
+let WAS_WIDE=wide();
+window.addEventListener('resize',()=>{
+  const now=wide();
+  if(now!==WAS_WIDE){ WAS_WIDE=now; render(); }
+});
 
 /* ---------- hover preview ----------
    Mouse only, and only when the grid isn't already showing whole cards — previewing a full
