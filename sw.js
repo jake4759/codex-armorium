@@ -38,8 +38,11 @@ self.addEventListener('fetch', e => {
   // rule 1 — pricing and search data must always come off the wire
   if (url.hostname === 'api.scryfall.com') return;
 
-  // immutable art: cache-first
-  if (url.hostname === 'cards.scryfall.io' || url.hostname === 'svgs.scryfall.io') {
+  // The OCR engine and its language data: several MB from version-pinned URLs that can
+  // never change under us, and the point of caching them is that the scanner costs its
+  // download exactly once. Same cache-first treatment as art, for the same reason.
+  if (url.hostname === 'cdn.jsdelivr.net' ||
+      url.hostname === 'cards.scryfall.io' || url.hostname === 'svgs.scryfall.io') {
     e.respondWith(
       caches.match(req).then(hit => hit || fetch(req).then(res => {
         if (res.ok) { const copy = res.clone(); caches.open(ART).then(c => c.put(req, copy)); }

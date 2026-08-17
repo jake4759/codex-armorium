@@ -646,6 +646,43 @@
     @keyframes dock{from{transform:translateX(28px);opacity:0}to{transform:none;opacity:1}}
   }
 
+  /* ---------- scanner ---------- */
+  /* The 3:4 is load-bearing: the guide's proportions are derived from it, so a max-height
+     that squashed the box would quietly reshape the guide and slide every crop off the
+     card. The width is capped instead, which keeps the ratio exact at any screen size. */
+  .cam{position:relative;width:100%;max-width:440px;margin:0 auto;aspect-ratio:3/4;
+       border-radius:22px;overflow:hidden;background:#000;
+       border:1px solid rgba(var(--gold-rgb),.2)}
+  .cam video{width:100%;height:100%;object-fit:cover;display:block}
+  /* 84% × 88% of a 3:4 box is 0.716 — a Magic card is 63:88, which is 0.716. These numbers
+     are GUIDE in the script; change one and you must change the other, or the crops that
+     read the title and collector number land on artwork instead. */
+  .guide{position:absolute;left:8%;top:6%;width:84%;height:88%;pointer-events:none;
+         border:2px solid var(--gold);border-radius:14px;
+         box-shadow:0 0 0 100vmax rgba(0,0,0,.42)}
+  .guide span{position:absolute;left:0;right:0;background:rgba(var(--gold-rgb),.16);
+              border-top:1px solid rgba(var(--gold-rgb),.5);border-bottom:1px solid rgba(var(--gold-rgb),.5)}
+  .guide .gtit{top:3.2%;height:6.8%}
+  .guide .gnum{top:90.5%;height:7%}
+  .camoff{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+          justify-content:center;gap:16px;padding:26px;text-align:center;
+          background:var(--surface);font-size:13px;color:var(--muted);line-height:1.6}
+  .camoff[hidden]{display:none}
+  .smsg{font-size:12.5px;color:var(--muted);margin:12px 0 10px;min-height:20px;line-height:1.5}
+  .srow{display:flex;align-items:center;gap:12px;padding:10px;border-radius:16px;
+        border:1px solid rgba(var(--gold-rgb),.16);background:var(--surface)}
+  .spor{width:52px;height:52px;flex:0 0 52px;border-radius:11px;
+        background:var(--surface3) center/cover no-repeat}
+  .sbody{flex:1;min-width:0}
+  .sbody h3{font-family:var(--f-display);font-weight:400;font-size:15px;color:var(--text)}
+  .sbody .m{font-size:11.5px;color:var(--muted);margin-top:2px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sbody .val{font-family:var(--f-num);font-size:12px;color:var(--green);margin-top:3px}
+  .sact{display:flex;gap:6px;flex:0 0 auto}
+  .sbtn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(var(--gold-rgb),.25);
+        color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:15px}
+  .sbtn.del{border-color:rgba(198,58,58,.5);color:#ff8a8a}
+
   /* ---------- deck health ---------- */
   .health{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
           border:1px solid rgba(var(--gold-rgb),.18);background:var(--surface);
@@ -788,7 +825,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-12 · legality & brackets';
+const BUILD='2026.08.16-13 · scanner';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -1559,6 +1596,176 @@ function deckCover(d){
 const deckLabel=d=>(d.icon?d.icon+' ':'')+d.name;
 
 /* ==========================================================
+   THE SCANNER
+   ==========================================================
+   Scryfall has no image recognition and Safari has no TextDetector, so this reads the card
+   the only way a single HTML file can: with OCR, on two specific strips of the frame.
+
+   The strip that matters is the bottom-left one — collector number over set code. It beat
+   the title comprehensively when measured against real card images:
+
+     title bar      modern bordered card   92% confidence, resolved correctly
+     title bar      borderless Secret Lair 25%, unusable — there is no title bar to read
+     collector line borderless Secret Lair "M1625 | SLD + EN" → sld/1625, exactly right
+
+   It wins twice over: it survives borderless and full-art frames, being plain sans text on
+   a flat strip rather than Beleren over artwork, and it identifies the *printing* rather
+   than the card — which is what this app stores. The title is the fallback, for cards
+   printed before 2015 that have no collector line at all.
+
+   Tesseract is ~5MB and loads only when the scanner is first opened, so it costs nothing
+   for anyone who never uses it; the service worker caches it thereafter. */
+const OCR_SRC='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+let OCR=null, OCR_STATE='idle';        // idle | loading | ready | failed
+
+async function ocrReady(){
+  if(OCR) return OCR;
+  if(OCR_STATE==='loading'){                       // a second tap must not load it twice
+    while(OCR_STATE==='loading') await new Promise(r=>setTimeout(r,120));
+    return OCR;
+  }
+  OCR_STATE='loading'; scanPaint();
+  try{
+    if(typeof Tesseract==='undefined'){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src=OCR_SRC; s.onload=res; s.onerror=()=>rej(new Error('cdn'));
+        document.head.appendChild(s);
+      });
+    }
+    OCR=await Tesseract.createWorker('eng',1,{legacyCore:false,legacyLang:false});
+    OCR_STATE='ready';
+  }catch(e){ OCR_STATE='failed'; }
+  scanPaint();
+  return OCR;
+}
+
+/* Upscale, flatten to grey, then stretch the range so the darkest pixel is black and the
+   lightest white. A phone frame of a card in a sleeve is low-contrast; without the stretch
+   Tesseract reads foil glare as characters. */
+function ocrCrop(src,sx,sy,sw,sh,scale){
+  const cv=document.createElement('canvas');
+  cv.width=Math.max(1,Math.round(sw*scale)); cv.height=Math.max(1,Math.round(sh*scale));
+  const g=cv.getContext('2d',{willReadFrequently:true});
+  g.imageSmoothingQuality='high';
+  g.drawImage(src,sx,sy,sw,sh,0,0,cv.width,cv.height);
+  const d=g.getImageData(0,0,cv.width,cv.height), p=d.data;
+  let min=255,max=0;
+  for(let i=0;i<p.length;i+=4){
+    const v=(p[i]*.299+p[i+1]*.587+p[i+2]*.114)|0;
+    p[i]=p[i+1]=p[i+2]=v; if(v<min)min=v; if(v>max)max=v;
+  }
+  const rng=Math.max(1,max-min);
+  for(let i=0;i<p.length;i+=4){ const v=((p[i]-min)*255/rng)|0; p[i]=p[i+1]=p[i+2]=v; }
+  g.putImageData(d,0,0);
+  return cv;
+}
+
+/* The collector strip comes back as noise around two facts, e.g.
+     "M1625 | | SLD + EN »% JosH Newton & Scott Os"
+     "Lee ee NY | R 0216 | MH3 « EN % BRUCE BRENNEISE"
+   The set code is whatever sits before the language tag — the bullet is read as +, «, · or
+   nothing, so the separator has to be generous. The number carries a rarity letter in front
+   and leading zeros, and OCR reads some of those zeros as the letter O. */
+function parseCollector(text){
+  const t=(text||'').replace(/\n/g,' ');
+  const setM=t.match(/\b([A-Z0-9]{3,6})\s*[^A-Za-z0-9]{0,3}\s*(?:EN|E N)\b/);
+  if(!setM) return null;
+  const set=setM[1].replace(/O/g,'0').length===setM[1].length?setM[1]:setM[1];
+  const before=t.slice(0,setM.index);
+  // last number-ish token before the set code, rarity letter and O-for-zero allowed
+  const nums=[...before.matchAll(/(?:^|[\s|])[CURMSPLT]?\s?([0O\d]{1,5})(?:[a-z]?)(?=[\s|]|$)/g)];
+  if(!nums.length) return null;
+  const raw=nums[nums.length-1][1].replace(/O/g,'0');
+  const num=String(Number(raw));
+  if(!/^\d+$/.test(num)||num==='0') return null;
+  return {set:set.toLowerCase(), num};
+}
+
+const cleanTitle=t=>(t||'').split('\n')[0]
+  .replace(/[^A-Za-z',\-\/ ]/g,' ').replace(/\s+/g,' ').trim();
+
+/* A 404 from fuzzy means "no card by that name", which is an answer — not an outage. Going
+   through lookupOne() would file every failed guess as a network failure and eventually
+   latch COOLDOWN, so the scanner asks Scryfall directly and keeps its own counsel. */
+async function fuzzyName(s){
+  try{
+    const r=await fetch('https://api.scryfall.com/cards/named?fuzzy='+encodeURIComponent(s),{signal:sig(8000)});
+    if(!r.ok) return null;
+    EVER_OK=true; return await r.json();
+  }catch(e){ return null; }
+}
+
+/* Dice coefficient over character bigrams. Cheap, and it does not care about word order or
+   a couple of mangled letters — which is exactly the shape of OCR error. */
+function similar(a,b){
+  const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  a=norm(a); b=norm(b);
+  if(!a||!b) return 0;
+  if(a===b) return 1;
+  const grams=s=>{const m=new Map();for(let i=0;i<s.length-1;i++){const g=s.slice(i,i+2);m.set(g,(m.get(g)||0)+1);}return m;};
+  const A=grams(a), B=grams(b);
+  let hit=0, ta=0, tb=0;
+  A.forEach((n,g)=>{ ta+=n; hit+=Math.min(n,B.get(g)||0); });
+  B.forEach(n=>{ tb+=n; });
+  return (2*hit)/((ta+tb)||1);
+}
+
+/* OCR reads the title and then keeps going into the artwork, so a good read is usually the
+   right name followed by rubbish: "Bloodstained Mire Ce er Za ©". Drop trailing words until
+   something resolves rather than throwing the whole line away.
+
+   The similarity gate is the important half. Scryfall's fuzzy endpoint will find *something*
+   for almost any input — the Alpha Lightning Bolt frame, read as noise, came back as
+   "Echoing Return" with total confidence. A miss the user can retry is far better than a
+   wrong card filed into a deck, so a match that doesn't resemble what was read is refused. */
+async function titleLookup(raw){
+  const base=cleanTitle(raw);
+  if(base.length<3) return null;
+  const w=base.split(' ');
+  for(let n=Math.min(w.length,6); n>=1; n--){
+    const s=w.slice(0,n).join(' ');
+    if(s.length<3) continue;
+    const c=await fuzzyName(s);
+    if(c && similar(s,c.name)>=0.5) return c;
+  }
+  return null;
+}
+
+/* One frame, three strips. The collector line is tried first because it names a *printing*;
+   the two title crops differ because the modern frame and the pre-2003 frame put the title
+   in measurably different places — 3.2% down versus 4.5% — and a crop tuned for one reads
+   artwork on the other. Measured: the modern crop scores 92% on a modern card and finds
+   nothing at all on an Onslaught fetchland; the old crop reads that fetchland correctly. */
+async function identifyFrame(src,box){
+  const w=await ocrReady();
+  if(!w) return {err:'The text reader could not load. Check your connection and try again.'};
+  const {x,y,cw,ch}=box;
+  const numCv=ocrCrop(src, x+cw*0.045, y+ch*0.905, cw*0.415, ch*0.070, 5);
+  const modCv=ocrCrop(src, x+cw*0.060, y+ch*0.032, cw*0.700, ch*0.068, 4);
+  const oldCv=ocrCrop(src, x+cw*0.085, y+ch*0.045, cw*0.580, ch*0.055, 5);
+  const [numR,modR,oldR]=await Promise.all(
+    [w.recognize(numCv),w.recognize(modCv),w.recognize(oldCv)]);
+
+  const cn=parseCollector(numR.data.text);
+  if(cn){
+    try{
+      const r=await fetch(`https://api.scryfall.com/cards/${encodeURIComponent(cn.set)}/${encodeURIComponent(cn.num)}`,{signal:sig(9000)});
+      if(r.ok){ const c=await r.json(); EVER_OK=true; return {card:c, via:'printing'}; }
+    }catch(e){}
+  }
+  // whichever title crop Tesseract was surer of gets the first go
+  const cands=[[modR.data.confidence,modR.data.text],[oldR.data.confidence,oldR.data.text]]
+    .sort((a,b)=>b[0]-a[0]);
+  for(const [,txt] of cands){
+    const c=await titleLookup(txt);
+    if(c) return {card:c, via:'name', read:cleanTitle(txt)};
+  }
+  return {err:'Couldn’t read that one — try again with more light, or straighter on.',
+          read:[cleanTitle(cands[0][1]),numR.data.text.trim().replace(/\s+/g,' ')].filter(Boolean).join(' · ').slice(0,90)};
+}
+
+/* ==========================================================
    COMMANDER LEGALITY AND BRACKETS
    ==========================================================
    Every check below is answered from data Scryfall already put in CACHE — legalities,
@@ -1686,11 +1893,13 @@ function render(){
   const r=here();
   const top={home:'home',decks:'decks',deck:'decks',rec:'decks',wishes:'wishes',wish:'wishes',life:'life',
              moves:'moves',move:'moves',source:'moves',
-             artists:'artists',signing:'artists',arts:'artists',
+             artists:'artists',signing:'artists',arts:'artists',scan:'home',
              add:(findWish(r.id)?'wishes':'decks')}[r.v];
   document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===top));
   if(r.v!=='life') document.body.classList.remove('life');
-  ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,add:vAdd,
+  // leaving the scanner must release the camera, or the phone keeps the light on
+  if(r.v!=='scan') scanStop();
+  ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,add:vAdd,scan:vScan,
     moves:vMoves,move:vMove,source:vSource,life:vLife,rec:vRec,search:vSearch,
     artists:vArtists,signing:vSigning,arts:vArts}[r.v]||vHome)(r);
   scroller().scrollTop=y;
@@ -1740,6 +1949,10 @@ function vHome(){
       <button class="act" data-go="moves">
         <b>Devoured</b>
         <span>${movedCount} cards logged out of decks</span>
+      </button>
+      <button class="act" data-go="scan">
+        <b>Scan a card</b>
+        <span>Read one with the camera and file it away</span>
       </button>
       <button class="act railhas" data-go="life">
         <b>Life counter</b>
@@ -1865,6 +2078,153 @@ function healthBand(d){
     <span class="hv">${state==='ok'?'✓':state==='warn'?'⚠':'⋯'} ${esc(verdict)}</span>
     <span class="hb">${brText}</span>
     <span class="hc">›</span></button>`;
+}
+
+/* ---------- the scanner ---------- */
+let SCAN_STREAM=null, SCAN_BUSY=false, SCAN_NOTE='';
+const scanQ=()=>(STATE.scanq||(STATE.scanq=[]));
+
+function scanStatus(){
+  if(SCAN_NOTE) return SCAN_NOTE;
+  if(OCR_STATE==='loading') return 'Fetching the text reader — one time only…';
+  if(OCR_STATE==='failed')  return 'The text reader failed to load. Tap to try again.';
+  if(SCAN_BUSY) return 'Reading…';
+  if(!SCAN_STREAM) return 'The camera is off.';
+  return 'Fill the frame with one card, then tap Scan.';
+}
+
+function scanListHtml(){
+  const q=scanQ();
+  if(!q.length) return `<div class="empty">Nothing scanned yet.<br>
+    Line the card up inside the corners — the bottom strip is what gets read.</div>`;
+  return `<div class="rows">${q.map((s,i)=>`
+    <div class="srow">
+      <div class="spor" style="${s.art?`background-image:url('${s.art}')`:''}"></div>
+      <div class="sbody">
+        <h3>${s.qty>1?s.qty+'× ':''}${esc(s.n)}</h3>
+        <div class="m">${esc(s.setName||'')}${s.num?' · #'+esc(s.num):''}${s.via==='name'?' · matched by name':''}</div>
+        <div class="val">${s.usd!=null?money(Number(s.usd)):'—'}${s.foil?' · Foil':''}</div>
+      </div>
+      <div class="sact">
+        <button class="sbtn" data-sqty="${i}|1" aria-label="One more">＋</button>
+        <button class="sbtn" data-sqty="${i}|-1" aria-label="One fewer">−</button>
+        <button class="sbtn del" data-sdrop="${i}" aria-label="Remove">✕</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+/* Never re-render the view while the camera is live: replacing #main would destroy the
+   <video> element and with it the MediaStream, and the next frame would come back black. */
+function scanPaint(){
+  const m=document.getElementById('scanMsg'); if(m) m.textContent=scanStatus();
+  const l=document.getElementById('scanlist'); if(l) l.innerHTML=scanListHtml();
+  const f=document.getElementById('scanFoot');
+  if(f) f.hidden=!scanQ().length;
+  const n=document.getElementById('scanTotal');
+  if(n) n.textContent=scanQ().reduce((a,s)=>a+s.qty,0)+' card'+(scanQ().reduce((a,s)=>a+s.qty,0)===1?'':'s');
+  const b=document.getElementById('shootBtn');
+  if(b){ b.disabled=!SCAN_STREAM||SCAN_BUSY; b.textContent=SCAN_BUSY?'Reading…':'Scan this card'; }
+}
+
+function vScan(){
+  _repaint=()=>{};                          // the camera owns this view; nothing repaints it
+  setBar('Scan','Read a card with the camera');
+  document.getElementById('main').innerHTML=`
+    <div class="cam" id="camBox">
+      <video id="scanvid" playsinline autoplay muted></video>
+      <div class="guide"><span class="gtit"></span><span class="gnum"></span></div>
+      <div class="camoff" id="camOff">
+        <div>The camera stays on this device. Nothing is uploaded — the card is read here
+          and only the name is looked up.</div>
+        <button class="btn primary" id="camStart">Turn on the camera</button>
+      </div>
+    </div>
+    <div class="smsg" id="scanMsg">${esc(scanStatus())}</div>
+    <button class="btn primary wide" id="shootBtn" disabled>Scan this card</button>
+    <div class="sech" style="margin-top:20px">Scanned<i id="scanTotal">0 cards</i></div>
+    <div id="scanlist">${scanListHtml()}</div>
+    <div class="btnrow" id="scanFoot" hidden style="margin-top:16px">
+      <button class="btn" id="scanClear">Clear</button>
+      <button class="btn primary" id="scanAdd">Add to a deck or list</button>
+    </div>`;
+  scanPaint();
+}
+
+async function scanStart(){
+  try{
+    SCAN_STREAM=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+    const v=document.getElementById('scanvid');
+    if(!v){ scanStop(); return; }
+    v.srcObject=SCAN_STREAM; await v.play().catch(()=>{});
+    const off=document.getElementById('camOff'); if(off) off.hidden=true;
+    SCAN_NOTE=''; ocrReady();                 // start the download while they line the card up
+  }catch(e){
+    SCAN_NOTE = e && e.name==='NotAllowedError'
+      ? 'Camera permission was refused. Allow it in your browser settings and reopen this.'
+      : 'No camera available here.';
+  }
+  scanPaint();
+}
+function scanStop(){
+  if(SCAN_STREAM){ SCAN_STREAM.getTracks().forEach(t=>t.stop()); SCAN_STREAM=null; }
+}
+
+/* The guide is drawn by CSS as a percentage of the box; the same percentages are applied to
+   the video's own pixels here, undoing object-fit:cover so the crop lands where the user
+   actually sees the frame. Getting this wrong reads the table, not the card. */
+function guideBox(v,box){
+  const vw=v.videoWidth, vh=v.videoHeight;
+  const bw=box.clientWidth, bh=box.clientHeight;
+  const scale=Math.max(bw/vw,bh/vh);
+  const offX=(vw*scale-bw)/2, offY=(vh*scale-bh)/2;
+  const toV=(nx,ny)=>[(offX+nx*bw)/scale,(offY+ny*bh)/scale];
+  const [x0,y0]=toV(GUIDE.x,GUIDE.y);
+  const [x1,y1]=toV(GUIDE.x+GUIDE.w,GUIDE.y+GUIDE.h);
+  return {x:x0,y:y0,cw:x1-x0,ch:y1-y0};
+}
+// must match .guide in CSS — 84×88 of a 3:4 box is exactly a card's 63:88
+const GUIDE={x:0.08,y:0.06,w:0.84,h:0.88};
+
+async function scanShoot(){
+  if(SCAN_BUSY||!SCAN_STREAM) return;
+  const v=document.getElementById('scanvid'), box=document.getElementById('camBox');
+  if(!v||!v.videoWidth) return;
+  SCAN_BUSY=true; SCAN_NOTE=''; scanPaint();
+  try{
+    const full=document.createElement('canvas');
+    full.width=v.videoWidth; full.height=v.videoHeight;
+    full.getContext('2d').drawImage(v,0,0);
+    const res=await identifyFrame(full,guideBox(v,box));
+    if(res.err){ SCAN_NOTE=res.err+(res.read?` (read: “${res.read}”)`:''); }
+    else{
+      const c=res.card;
+      CACHE.set(key(c.name),c); ART_BY_ID.set(c.id,c);
+      const q=scanQ();
+      const same=q.find(s=>s.id===c.id);
+      if(same){ same.qty++; SCAN_NOTE=`${c.name} — now ${same.qty}`; }
+      else{
+        q.unshift({id:c.id,n:c.name,setName:c.set_name,num:c.collector_number,
+                   art:artOf(c),full:fullOf(c),usd:(c.prices||{}).usd,qty:1,foil:false,via:res.via});
+        SCAN_NOTE=res.via==='printing'?`${c.name} — ${c.set_name} #${c.collector_number}`
+                                      :`${c.name} — matched by name, check the printing`;
+      }
+      save();
+      if(navigator.vibrate) navigator.vibrate(18);
+    }
+  }catch(e){ SCAN_NOTE='Something went wrong reading that frame.'; }
+  SCAN_BUSY=false; scanPaint();
+}
+
+function sheetScanAdd(){
+  const q=scanQ(); if(!q.length) return;
+  const n=q.reduce((a,s)=>a+s.qty,0);
+  const row=(l,kind)=>`<button class="btn wide" data-scanput="${esc(l.id)}" style="margin-top:9px;text-align:left">
+      ${esc(l.name)} <span style="color:var(--muted);font-size:12px">· ${kind}</span></button>`;
+  openSheet(`<h3>Add ${n} card${n===1?'':'s'}</h3>
+    <div class="tl">The scanned printing is kept as that list's art for each card</div>
+    ${STATE.decks.map(d=>row(d,'deck')).join('')}
+    ${(STATE.wishlists||[]).map(w=>row(w,'wishlist')).join('')}`);
 }
 
 /* ---------- one deck ---------- */
@@ -3618,6 +3978,39 @@ document.addEventListener('click',async e=>{
   if(t.closest('#wishEdit')) return sheetEditWish(here().id);
   if(t.closest('#deckEdit')) return sheetEditDeck(here().id);
   if(t.closest('#healthBtn')) return sheetHealth(here().id);
+  /* --- scanner --- */
+  if(t.closest('#camStart')) return scanStart();
+  if(t.closest('#shootBtn')) return scanShoot();
+  if(t.closest('#scanMsg')&&OCR_STATE==='failed'){ OCR_STATE='idle'; return ocrReady(); }
+  const sq=t.closest('[data-sqty]');
+  if(sq){
+    const [i,d]=sq.dataset.sqty.split('|').map(Number);
+    const s=scanQ()[i]; if(!s) return;
+    s.qty+=d;
+    if(s.qty<1) scanQ().splice(i,1);
+    save(); return scanPaint();
+  }
+  const sd=t.closest('[data-sdrop]');
+  if(sd){ scanQ().splice(Number(sd.dataset.sdrop),1); save(); return scanPaint(); }
+  if(t.closest('#scanClear')){ STATE.scanq=[]; save(); return scanPaint(); }
+  if(t.closest('#scanAdd')) return sheetScanAdd();
+  const sp=t.closest('[data-scanput]');
+  if(sp){
+    const l=findList(sp.dataset.scanput); if(!l) return;
+    const sect=l.sections[0];
+    scanQ().forEach(s=>{
+      const have=listEntries(l).find(e=>key(e.n)===key(s.n));
+      if(have) have.qty=entryQty(have)+s.qty;
+      else sect.cards.push({n:s.n,tag:T.ADD,qty:s.qty,foil:!!s.foil});
+      // the scan knew the exact printing, so record it as this list's art for the card
+      if(s.id&&s.full){
+        STATE.art=STATE.art||{};
+        (STATE.art[l.id]=STATE.art[l.id]||{})[key(s.n)]={id:s.id,art:s.art,full:s.full};
+      }
+    });
+    STATE.scanq=[]; save(); closeSheet();
+    return go({v:findDeck(l.id)?'deck':'wish',id:l.id});
+  }
   const bk=t.closest('[data-bracket]');
   if(bk){
     const d=findDeck(here().id); if(!d) return;
