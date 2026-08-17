@@ -424,6 +424,11 @@
   .ptab .pr.on{background:var(--gold-glow)}
   .ptab .st{font-size:12px;color:var(--text);line-height:1.3;min-width:0}
   .ptab .st i{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:1px}
+  .ptab .st .ar{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-top:2px;
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* a painter who is actually at the con is the reason you are reading this table */
+  .ptab .st .ar.con{color:var(--gold)}
+  .ptab .st .ar.con::before{content:"✒ ";opacity:.85}
   .ptab .pv{font-family:var(--f-num);font-size:12px;color:var(--green);text-align:right;
             font-variant-numeric:tabular-nums}
   .ptab .pv.dim{color:var(--muted);opacity:.5}
@@ -739,7 +744,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-08 · pull to dismiss';
+const BUILD='2026.08.16-09 · artist credits';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -2175,7 +2180,10 @@ function vSearch(){
       ${src?`<img loading="lazy" src="${src}" alt="${esc(c.name)}">`
            :`<div class="miss"><b>${esc(c.name)}</b></div>`}
       <div class="plate"><div style="min-width:0">
-        <div class="nm">${esc(c.name)}</div><div class="tg">${esc(c.set_name||'')}</div>
+        <div class="nm">${esc(c.name)}</div><div class="tg">${esc(c.set_name||'')}</div>${
+        // same three-line plate the signing results use, so a result reads the same
+        // wherever you met it — and the lineup gets the gold treatment here too
+        c.artist?`<div class="tg" style="color:${byConArtist(c.artist)?'var(--gold)':'var(--muted)'}">${esc(c.artist)}</div>`:''}
       </div><div class="pz">${usd?'$'+usd:'—'}</div></div>
     </button>`;
   };
@@ -3081,7 +3089,11 @@ async function fillPriceTable(name,currentId){
         return `<button class="pr${x.id===currentId?' on':''}" data-priceid="${esc(x.id)}">
           <div class="st">${esc(x.set_name||'')}<i>#${esc(x.collector_number||'')}${
             (x.frame_effects||[]).filter(f=>f!=='legendary').length
-              ? ' · '+esc((x.frame_effects||[]).filter(f=>f!=='legendary').join(' · ')):''}</i></div>
+              ? ' · '+esc((x.frame_effects||[]).filter(f=>f!=='legendary').join(' · ')):''}</i>${
+            /* Which printings a given painter actually did is the question you are holding
+               the card to answer while standing in their queue — the set and the collector
+               number don't answer it. Highlighted when it's an artist at the con. */
+            x.artist?`<em class="ar${byConArtist(x.artist)?' con':''}">${esc(x.artist)}</em>`:''}</div>
           ${cell(p.usd)}${cell(p.usd_foil||p.usd_etched)}
         </button>`;
       }).join('')}
