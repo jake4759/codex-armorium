@@ -821,7 +821,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-16 · name-anchored + debug';
+const BUILD='2026.08.16-17 · focus + edge snap';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -1682,11 +1682,18 @@ const cleanTitle=t=>cleanLine((t||'').split('\n')[0]);
 /* A 404 from fuzzy means "no card by that name", which is an answer — not an outage. Going
    through lookupOne() would file every failed guess as a network failure and eventually
    latch COOLDOWN, so the scanner asks Scryfall directly and keeps its own counsel. */
+/* Tokens, emblems and art-series cards share names with real cards and Scryfall's fuzzy
+   match will happily return one — a scan came back as "Bloomburrow Tokens #10". You cannot
+   own that as a deck card, so it is never the right answer here. */
+const REAL_CARD=c=>!!c && !['token','double_faced_token','emblem','art_series','scheme','planar','vanguard']
+  .includes(c.layout) && !['token','memorabilia','minigame'].includes(c.set_type);
+
 async function fuzzyName(s){
   try{
     const r=await fetch('https://api.scryfall.com/cards/named?fuzzy='+encodeURIComponent(s),{signal:sig(8000)});
     if(!r.ok) return null;
-    EVER_OK=true; return await r.json();
+    const c=await r.json(); EVER_OK=true;
+    return REAL_CARD(c)?c:null;
   }catch(e){ return null; }
 }
 
@@ -1791,9 +1798,38 @@ function detectCard(src,W){
     if(!best||n>best.n) best={n,x0,y0,x1,y1};
   }
   if(!best||best.n<6) return null;
-  const px=C*(best.x1-best.x0+1), py=C*(best.y1-best.y0+1);
+  let px=C*(best.x1-best.x0+1), py=C*(best.y1-best.y0+1);
   if(px*py < W*H*0.03) return null;
-  return {x:best.x0*C/W, y:best.y0*C/H, w:px/W, h:py/H};
+  let bx=best.x0*C, by=best.y0*C;
+
+  /* Snapping to the strongest nearby edge was tried and measurably hurt: the box shrank
+     49×73px *inside* the card, because a card's internal rules — the title bar's underside,
+     the type line, the top of the text box — carry more gradient than its outer border does
+     against a dark table. The coarse blob, snapped to card proportions, was the better
+     estimate. Left here so it isn't rediscovered. */
+  return {x:bx/W, y:by/H, w:px/W, h:py/H};
+}
+
+/* Variance of the gradient: a sharp frame has a wide spread of edge strengths, a blurred one
+   is uniformly mushy. Reading a blurred frame costs two seconds and returns nonsense, so it
+   is cheaper to look at 40 frames and read the one that is actually in focus. */
+function frameSharpness(src,W){
+  W=W||160;
+  const sw=src.videoWidth||src.width, sh=src.videoHeight||src.height;
+  if(!sw) return 0;
+  const H=Math.max(8,Math.round(sh*W/sw));
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const g=cv.getContext('2d',{willReadFrequently:true});
+  g.drawImage(src,0,0,W,H);
+  const d=g.getImageData(0,0,W,H).data;
+  let n=0, sum=0, sum2=0;
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){
+    const i=(y*W+x)*4, il=i-4, ir=i+4, iu=i-W*4, id=i+W*4;
+    const lap=Math.abs(4*d[i]-d[il]-d[ir]-d[iu]-d[id]);
+    sum+=lap; sum2+=lap*lap; n++;
+  }
+  const mean=sum/n;
+  return Math.sqrt(sum2/n-mean*mean);
 }
 
 /* The blob's box is a few percent out and never exactly card-shaped; forcing it to 63:88
@@ -1873,8 +1909,10 @@ async function identifyFrame(src,box){
     let byName=null;
     for(const [,t] of titles){ byName=await nameLookup(cleanTitle(t)); if(byName) break; }
 
+    // two independent readings agreeing is as strong as two frames agreeing, so it skips
+    // the hold-still confirmation entirely
     if(byNum&&byName) return byNum.name===byName.name
-      ? {card:byNum, via:'printing'}
+      ? {card:byNum, via:'printing', sure:true}
       : {card:byName, via:'name'};
     if(byNum) return {card:byNum, via:'printing'};
     if(byName){
@@ -2312,7 +2350,7 @@ function scanPaint(){
   const lk=document.getElementById('scanlook');
   if(lk) lk.innerHTML=(SCAN_DEBUG&&SCAN_LOOK)?`
     <div class="look">
-      <div class="lk">Card found: ${esc(SCAN_LOOK.box)}</div>
+      <div class="lk">Card found: ${esc(SCAN_LOOK.box)} · focus ${SCAN_SHARP.toFixed(1)} of best ${SCAN_SHARP_MAX.toFixed(1)}</div>
       ${SCAN_LOOK.strips.filter(Boolean).map(s=>`<img src="${s}" alt="">`).join('')}
       ${SCAN_LOOK.text.map(t=>`<div class="lt">${esc(t)}</div>`).join('')}
     </div>`:'';
@@ -2347,8 +2385,19 @@ function vScan(){
 
 async function scanStart(){
   try{
+    /* focusMode and the high resolution are `ideal`, not `exact`: Safari ignores what it
+       doesn't implement rather than failing the whole request, and a camera that opens
+       without continuous focus is still far better than no camera. */
     SCAN_STREAM=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+      video:{facingMode:{ideal:'environment'},
+             width:{ideal:1920},height:{ideal:1080},
+             focusMode:{ideal:'continuous'}, frameRate:{ideal:30}},audio:false});
+    try{
+      const tr=SCAN_STREAM.getVideoTracks()[0];
+      const caps=tr.getCapabilities?tr.getCapabilities():{};
+      if(caps.focusMode&&caps.focusMode.includes('continuous'))
+        await tr.applyConstraints({advanced:[{focusMode:'continuous'}]});
+    }catch(e){}
     const v=document.getElementById('scanvid');
     if(!v){ scanStop(); return; }
     v.srcObject=SCAN_STREAM; await v.play().catch(()=>{});
@@ -2381,7 +2430,15 @@ let SCAN_TRACK=null, SCAN_BOX=null;
    hunting, and none of that can be guessed at. This panel shows the three strips exactly as
    Tesseract received them and exactly what it returned, so a screenshot of it says which
    stage is failing — detection, crop alignment, or the reading itself. */
-let SCAN_DEBUG=false, SCAN_LOOK=null;
+let SCAN_DEBUG=false, SCAN_LOOK=null, SCAN_SHARP=0, SCAN_SHARP_MAX=0;
+/* Relative, not absolute. A fixed threshold cannot work across phones and lighting — a dim
+   room scores lower than a bright one on every frame, sharp or not — so the bar is a
+   fraction of the best frame seen lately. The maximum decays so it re-calibrates when you
+   move somewhere darker instead of locking the scanner out forever. */
+const sharpEnough=s=>{
+  SCAN_SHARP_MAX=Math.max(s,SCAN_SHARP_MAX*0.97);
+  return s>=4 && s>=SCAN_SHARP_MAX*0.62;
+};
 
 /* The outline runs on its own fast loop, ten times a second, because detection is ~20ms
    while a read is well over a second. Separating them is what makes the box follow the card
@@ -2396,16 +2453,20 @@ function scanTrackTick(){
     const g=cvs.getContext('2d');
     g.clearRect(0,0,bw,bh);
     if(SCAN_BOX){
-      // undo object-fit:cover to put the box where the card appears on screen
+      /* Draw the *snapped* rectangle, the one the crops are actually cut from — not the raw
+         blob. They differ, and showing the blob meant the outline could look right while the
+         reading was happening somewhere else. The two inner bars are the exact strips being
+         read, so if the outline sits on the card and the bars sit on the title and the
+         collector line, the geometry is correct and any failure is the image itself. */
+      const c=snapCard(SCAN_BOX,v.videoWidth,v.videoHeight);
       const s=Math.max(bw/v.videoWidth,bh/v.videoHeight);
       const ox=(bw-v.videoWidth*s)/2, oy=(bh-v.videoHeight*s)/2;
-      const x=ox+SCAN_BOX.x*v.videoWidth*s, y=oy+SCAN_BOX.y*v.videoHeight*s;
-      const w=SCAN_BOX.w*v.videoWidth*s, h=SCAN_BOX.h*v.videoHeight*s;
-      const ratio=w/h, good=ratio>0.55&&ratio<0.95;    // card-shaped enough to believe
-      g.strokeStyle=good?getComputedStyle(document.documentElement).getPropertyValue('--gold').trim()||'#e3b765'
-                       :'rgba(255,255,255,.35)';
-      g.lineWidth=good?4:2;
-      g.lineJoin='round';
+      const x=ox+c.x*s, y=oy+c.y*s, w=c.cw*s, h=c.ch*s;
+      const ratio=SCAN_BOX.w*v.videoWidth/(SCAN_BOX.h*v.videoHeight);
+      const good=ratio>0.55&&ratio<0.95;
+      const gold=getComputedStyle(document.documentElement).getPropertyValue('--gold').trim()||'#e3b765';
+      g.strokeStyle=good?gold:'rgba(255,255,255,.35)';
+      g.lineWidth=good?4:2; g.lineJoin='round';
       const r=Math.min(18,w*0.08);
       g.beginPath();
       g.moveTo(x+r,y); g.lineTo(x+w-r,y); g.quadraticCurveTo(x+w,y,x+w,y+r);
@@ -2413,6 +2474,11 @@ function scanTrackTick(){
       g.lineTo(x+r,y+h); g.quadraticCurveTo(x,y+h,x,y+h-r);
       g.lineTo(x,y+r); g.quadraticCurveTo(x,y,x+r,y);
       g.closePath(); g.stroke();
+      if(good){
+        g.strokeStyle='rgba(120,220,255,.85)'; g.lineWidth=2;
+        g.strokeRect(x+w*0.050, y+h*0.022, w*0.760, h*0.090);   // title strip
+        g.strokeRect(x+w*0.030, y+h*0.885, w*0.480, h*0.092);   // collector strip
+      }
     }
   }
   SCAN_TRACK=setTimeout(scanTrackTick,100);
@@ -2426,7 +2492,7 @@ let SCAN_PEND=null;
 function scanAccept(res){
   const c=res.card;
   if(c.id===SCAN_LASTID){ SCAN_NOTE=`${c.name} is already in the list — point at the next one.`; return; }
-  if(!SCAN_PEND||SCAN_PEND!==c.id){
+  if(!res.sure && (!SCAN_PEND||SCAN_PEND!==c.id)){
     SCAN_PEND=c.id;
     SCAN_NOTE=`${c.name}? — hold still, checking…`;
     return;
@@ -2451,6 +2517,15 @@ async function scanTick(){
   if(!SCAN_ON) return;
   const v=document.getElementById('scanvid');
   if(!SCAN_STREAM||!v||!v.videoWidth||OCR_STATE==='failed'){ return scanSoon(500); }
+  /* Don't spend two seconds reading a frame that was never going to work. A phone hunting
+     for focus produces a lot of these, and each one previously cost a full pass and could
+     return nonsense. Checking costs about 20ms, so it is far better to skim frames and read
+     only the sharp one. */
+  SCAN_SHARP=frameSharpness(v);
+  if(!sharpEnough(SCAN_SHARP)){
+    SCAN_NOTE='Hold steady — waiting for focus…';
+    scanPaint(); return scanSoon(160);
+  }
   SCAN_BUSY=true; scanPaint();
   let res=null;
   try{ res=await identifyFrame(v,SCAN_BOX); }catch(e){ res=null; }
