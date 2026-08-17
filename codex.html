@@ -739,7 +739,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-07 · recent decks';
+const BUILD='2026.08.16-08 · pull to dismiss';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -3761,6 +3761,60 @@ document.addEventListener('wheel',e=>{
 },{passive:false});
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
+
+/* ---------- pull down to dismiss ----------
+   The sheet has drawn a grab handle since the beginning and it never did anything. Phone
+   only: on the desktop the same element is a drawer docked to the right, where dragging it
+   downwards means nothing.
+
+   The gesture may only start when the sheet is already scrolled to its top, or from the
+   handle itself — otherwise a downward swipe is how you read the rest of a long card, and
+   taking that over would make the sheet unreadable. Direction is decided once, after 6px:
+   past that the drag either owns the gesture or hands it back for the rest of the touch,
+   so a horizontal flick through the printing strip is never mistaken for a dismiss. */
+(function pullToDismiss(){
+  const el=document.querySelector('.sheet');
+  if(!el) return;
+  let y0=0,x0=0,dy=0,live=false,decided=false;
+  const clear=()=>{ el.style.transition=''; el.style.transform=''; };
+
+  el.addEventListener('touchstart',e=>{
+    if(wide()||e.touches.length!==1) return;
+    if(el.scrollTop>0 && !e.target.closest('.grab')) return;
+    const t=e.touches[0];
+    y0=t.clientY; x0=t.clientX; dy=0; live=true; decided=false;
+    el.style.transition='none';
+  },{passive:true});
+
+  el.addEventListener('touchmove',e=>{
+    if(!live) return;
+    const t=e.touches[0], d=t.clientY-y0, dx=t.clientX-x0;
+    if(!decided){
+      if(Math.abs(d)<6 && Math.abs(dx)<6) return;      // too small to read intent yet
+      decided=true;
+      // sideways, or upwards into the content: not ours, and not ours again this touch
+      if(Math.abs(dx)>Math.abs(d) || d<0){ live=false; el.style.transition=''; return; }
+    }
+    dy=Math.max(0,d);
+    el.style.transform=`translateY(${dy}px)`;
+    if(e.cancelable) e.preventDefault();
+  },{passive:false});
+
+  const release=()=>{
+    if(!live) return;
+    live=false;
+    el.style.transition='transform .22s ease';
+    if(dy>110){                                        // far enough: see it out, then close
+      el.style.transform='translateY(100%)';
+      setTimeout(()=>{ closeSheet(); clear(); },200);
+    } else {
+      el.style.transform='';
+      setTimeout(clear,240);
+    }
+  };
+  el.addEventListener('touchend',release);
+  el.addEventListener('touchcancel',release);
+})();
 
 /* Several things are decided once, at render time, from which side of 1000px we're on:
    how many decks the home strip shows, and whether `table` mode is honoured or degraded.
