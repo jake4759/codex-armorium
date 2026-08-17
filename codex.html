@@ -779,7 +779,7 @@
   <div class="row">
     <button class="icobtn ghost" id="back" aria-label="Back">‹</button>
     <div class="barttl">
-      <h1 id="barTitle">Korvold's Hoard</h1>
+      <h1 id="barTitle">The Hoard</h1>
       <div class="sub" id="barSub">Fae-Cursed King</div>
     </div>
     <button class="icobtn" id="actBtn" aria-label="Action" hidden>⊞</button>
@@ -836,7 +836,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-18 · value over time';
+const BUILD='2026.08.16-19 · the hoard';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -2147,7 +2147,7 @@ function render(){
 /* ---------- home ---------- */
 function vHome(){
   _repaint=paintHomeStats;              // only the numbers refresh, never the buttons
-  setBar("Korvold's Hoard",'Fae-Cursed King');
+  setBar("The Hoard",'Fae-Cursed King');
   const movedCount=STATE.moves.reduce((a,m)=>a+m.sources.reduce((b,s)=>b+s.cards.length,0),0);
   const ws=STATE.wishlists||[];
   const signed=Object.values(STATE.signed||{}).filter(Boolean).length;
