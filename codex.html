@@ -297,9 +297,6 @@
     letter-spacing:.06em;padding:4px 9px;text-transform:uppercase;z-index:3;border-radius:9px;font-weight:600}
   .badge.cmd{background:var(--gold);color:var(--bg)}
   .badge.combo{background:var(--green)}
-  .del{position:absolute;top:8px;left:8px;width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;
-    display:none;align-items:center;justify-content:center;font-size:15px;z-index:4}
-  body.editing .del{display:flex}
   .tick{position:absolute;top:8px;left:8px;width:32px;height:32px;border-radius:50%;
         background:rgba(var(--bg-rgb),.8);border:1px solid rgba(var(--gold-rgb),.35);color:var(--gold);
         font-size:15px;display:flex;align-items:center;justify-content:center;z-index:4}
@@ -457,6 +454,8 @@
     display:inline-flex;align-items:center;gap:8px;
   }
   .artsbtn:active{background:var(--gold);color:var(--on-gold)}
+  .artsbtn.danger{border-color:rgba(198,58,58,.55);color:#ff8a8a}
+  .artsbtn.danger:active{background:var(--red);color:#fff}
   .card.owned{outline:2px solid var(--gold);outline-offset:-2px}
   .card.picked{outline:3px solid var(--green);outline-offset:-3px}
   .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
@@ -744,7 +743,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-10 · one search';
+const BUILD='2026.08.16-11 · remove from card';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -1391,7 +1390,7 @@ let STACK=[{v:'home'}];
 /* Whole cards by default. You recognise a card by its picture *and* its frame, and the
    crop throws the frame away — the same reason the printing picker went full-card.
    Overwritten from STATE at boot, so a switch to crops survives a reload. */
-let MODE='full', EDIT=false;
+let MODE='full';
 /* A third way to read a list. `table` is deliberately desktop-only: it trades the art that
    makes the grid worth looking at for row density, which is a good trade on a monitor and a
    bad one on a phone, where forty rows of 11px text is just a worse grid. Everything that
@@ -1553,7 +1552,6 @@ function render(){
              artists:'artists',signing:'artists',arts:'artists',
              add:(findWish(r.id)?'wishes':'decks')}[r.v];
   document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===top));
-  document.body.classList.toggle('editing',EDIT && (r.v==='deck'||r.v==='wish'));
   if(r.v!=='life') document.body.classList.remove('life');
   ({home:vHome,decks:vDecks,deck:vDeck,wishes:vWishes,wish:vWish,add:vAdd,
     moves:vMoves,move:vMove,source:vSource,life:vLife,rec:vRec,search:vSearch,
@@ -1748,8 +1746,7 @@ function vDeck(r){
         <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
           <button class="btn sm" id="modeBtn">${modeLabel()}</button>
           <button class="btn sm" id="viewBtn">⊞ ${esc(GROUPS[VIEW().group]||'Type')}</button>
-          <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
-          <button class="btn sm" id="deckEdit">Deck…</button>
+          <button class="btn sm" id="deckEdit">Deck settings</button>
           <button class="btn sm" id="recBtn">EDHREC ›</button>
         </div>
       </div>
@@ -1838,8 +1835,7 @@ function vWish(r){
         <div class="l">${nCards} cards${t.unknown?` · ${t.unknown} unpriced`:''}</div>
         <div class="btnrow" style="margin-top:6px;justify-content:flex-end">
           <button class="btn sm" id="modeBtn">${modeLabel()}</button>
-          <button class="btn sm ${EDIT?'primary':''}" id="editBtn">${EDIT?'Done':'Edit'}</button>
-          <button class="btn sm" id="wishEdit">List…</button>
+          <button class="btn sm" id="wishEdit">List settings</button>
         </div>
       </div>
     </div>
@@ -2052,7 +2048,7 @@ function cardTile(c,deckId,sectName){
   const img=src?`<img loading="lazy" src="${src}" alt="${esc(c.n)}">`
                 :`<div class="miss"><b>${esc(c.n)}</b><span style="font-size:8.5px;letter-spacing:.14em;opacity:.55">NO IMAGE</span></div>`;
   return `<div class="card${c.foil?' foil':''}" data-card="${esc(c.n)}" ${deckId?`data-deck="${esc(deckId)}" data-sect="${esc(sectName)}"`:''}>
-    ${badge}${deckId?`<button class="del" data-del="1" aria-label="Remove">✕</button>`:''}
+    ${badge}
     ${img}${gridMode()==='full'?`<div class="pricetag">${priceCell(p)}</div>`:''}
     <div class="plate">
       <div style="min-width:0"><div class="nm">${esc(c.n)}</div>${
@@ -3042,7 +3038,13 @@ function wishBar(c,deckId){
       >✎ ${entryQty(entry)>1?entryQty(entry)+' copies':'Your copy'}${entry.foil?' · Foil':''}${entry.cond&&entry.cond!=='NM'?' · '+esc(entry.cond):''}</button>`:''}
     <button class="artsbtn" data-wishadd="${esc(c.name)}"
       ${on.length?'style="border-color:var(--green);color:var(--green)"':''}
-      >${on.length?'✓ On '+esc(on.join(', ')):'＋ Add to wishlist'}</button></div>`;
+      >${on.length?'✓ On '+esc(on.join(', ')):'＋ Add to wishlist'}</button>${
+    /* Removal used to live behind an Edit mode: a toggle that put a ✕ on every tile and, in
+       exchange, made tapping a card do nothing. Two states for the list, and the more
+       common one disabled. It belongs here — you are already looking at the card you mean,
+       having arrived by the same tap you would have used to open it. */
+    entry?`<button class="artsbtn danger" data-rmcard="${esc(c.name)}" data-rmlist="${esc(deckId)}"
+      >✕ Remove from ${esc(list.name)}</button>`:''}</div>`;
 }
 
 function sheetWishPick(name){
@@ -3515,23 +3517,23 @@ document.addEventListener('click',async e=>{
     STATE.view=Object.assign({},VIEW(),{mode:MODE}); save();
     return render();
   }
-  if(t.closest('#editBtn')){ EDIT=!EDIT; return render(); }
-
-  const del=t.closest('[data-del]');
-  if(del){
-    e.stopPropagation();
-    const c=del.closest('.card');
-    const d=findList(c.dataset.deck);
-    // the tile's heading is a type or colour once grouping is on, so it can't locate the
+  const rm=t.closest('[data-rmcard]');
+  if(rm){
+    const d=findList(rm.dataset.rmlist); if(!d) return;
+    const name=rm.dataset.rmcard;
+    // the tile's heading is a type or a colour once grouping is on, so it can't locate the
     // owning section any more — find the card itself instead
-    if(d){
-      for(const s of d.sections){
-        const i=s.cards.findIndex(x=>x.n===c.dataset.card);
-        if(i>-1){ s.cards.splice(i,1); break; }
-      }
-      save(); render();
+    for(const s of d.sections){
+      const i=s.cards.findIndex(x=>x.n===name);
+      if(i>-1){ s.cards.splice(i,1); break; }
     }
-    return;
+    // a commander that is no longer in the deck is not a commander
+    const deck=findDeck(rm.dataset.rmlist);
+    if(deck&&isCommander(deck,name)){
+      setDeckCommanders(deck,deckCommanders(deck).filter(n=>key(n)!==key(name)));
+      REC_SETS.clear();
+    }
+    save(); closeSheet(); return render();
   }
 
   // must clear COOLDOWN too, or lookupOne bails instantly and this button does nothing
@@ -3607,7 +3609,7 @@ document.addEventListener('click',async e=>{
 
   // the attribute, not `.card` — a table row carries the same data and deserves the same tap
   const card=t.closest('[data-card]');
-  if(card && !EDIT){
+  if(card){
     const sid=card.dataset.sid;
     if(sid && SCAN && SCAN.byId && SCAN.byId.has(sid)) return showCardObj(SCAN.byId.get(sid));
     return showCard(card.dataset.card,card.dataset.deck||'');
