@@ -744,7 +744,7 @@
    is, this is how you tell whether the device is running a stale cached copy.
    BUMP THIS ON EVERY DEPLOY — a stamp that doesn't change is worse than none, because
    it reads as confirmation that the device is current when it isn't. */
-const BUILD='2026.08.16-09 · artist credits';
+const BUILD='2026.08.16-10 · one search';
 
 /* ==========================================================
    1b. THEMES — the Magic colour identities
@@ -1527,6 +1527,12 @@ function setBar(title,sub,opts={}){
   document.getElementById('back').classList.toggle('ghost',STACK.length<=1);
   const act=document.getElementById('fabBtn');
   act.hidden=!opts.action; if(opts.action) act.textContent=opts.action;
+  /* Inside a deck or a list the ＋ *is* the card search — vAdd queries Scryfall live as you
+     type — so the magnifier beside it offered the same lookup with nowhere to put the
+     result. One search per screen. The magnifier stays everywhere the ＋ means something
+     else (New deck, New wishlist) or isn't there at all, and on the desktop the rail
+     carries Search cards regardless. */
+  document.getElementById('searchBtn').hidden=!!opts.noFind;
   document.body.classList.toggle('tools',!!opts.tools);
   const box=document.getElementById('search');
   box.placeholder=opts.placeholder||'Filter cards…';
@@ -1708,7 +1714,8 @@ function vDeck(r){
   _repaint=()=>{ if(here().v==='deck') vDeck(here()); };
   const d=findDeck(r.id); if(!d) return back();
   const allNames=d.sections.flatMap(s=>s.cards.map(c=>c.n));
-  setBar(deckLabel(d),d.sub||commanderLabel(d)||'No commander set',{tools:true,action:'＋',searchFor:'deck:'+d.id});
+  setBar(deckLabel(d),d.sub||commanderLabel(d)||'No commander set',
+         {tools:true,action:'＋',noFind:true,searchFor:'deck:'+d.id});
 
   // chips
   const tags=[...new Set(d.sections.flatMap(s=>s.cards.map(c=>c.tag)).filter(Boolean))].sort();
@@ -1799,7 +1806,8 @@ function vWish(r){
   _repaint=()=>{ if(here().v==='wish') vWish(here()); };
   const w=findWish(r.id); if(!w) return back();
   const allNames=wishNames(w), nCards=countEntries(w);
-  setBar(w.name,w.sub||`${nCards} card${nCards===1?'':'s'} wanted`,{tools:true,action:'＋',searchFor:'wish:'+w.id});
+  setBar(w.name,w.sub||`${nCards} card${nCards===1?'':'s'} wanted`,
+         {tools:true,action:'＋',noFind:true,searchFor:'wish:'+w.id});
 
   const tags=[...new Set(w.sections.flatMap(s=>s.cards.map(c=>c.tag)).filter(Boolean))].sort();
   const chipbar=document.getElementById('chips');
